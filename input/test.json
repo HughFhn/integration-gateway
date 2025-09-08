@@ -1,4 +1,11 @@
-{
-  "firstName": "John",
-  "lastName": "Doe"
-}
+[
+  { "firstName": "John", "lastName": "Doe" },
+  { "firstName": "Alice", "lastName": "Smith" },
+  { "firstName": "Mark", "lastName": "Lee" },
+  { "firstName": "Sara", "lastName": "Brown" },
+  { "firstName": "Tom", "lastName": "Fox" },
+  { "firstName": "Eve", "lastName": "Stone" },
+  { "firstName": "Paul", "lastName": "Green" },
+  { "firstName": "Anna", "lastName": "White" },
+  { "firstName": "Bob", "lastName": "King" }
+]
