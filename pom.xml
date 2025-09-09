@@ -73,14 +73,14 @@
             <version>${camel.version}</version>
         </dependency>
 
-        <!-- MapStruct -->
+        <!-- MapStruct API -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
-        
-        <!-- MapStruct Processor -->
+
+        <!-- MapStruct Processor (compile-time only) -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct-processor</artifactId>
@@ -98,7 +98,7 @@
                 <version>${spring.boot.version}</version>
             </plugin>
 
-            <!-- Maven Compiler Plugin -->
+            <!-- Maven Compiler Plugin with annotation processor -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
