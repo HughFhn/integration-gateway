@@ -73,6 +73,13 @@
             <version>${camel.version}</version>
         </dependency>
 
+        <!-- Camel HL7 Component -->
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-hl7-starter</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+
         <!-- MapStruct API -->
         <dependency>
             <groupId>org.mapstruct</groupId>
@@ -86,6 +93,34 @@
             <artifactId>mapstruct-processor</artifactId>
             <version>${mapstruct.version}</version>
             <scope>provided</scope>
+        </dependency>
+        
+        <!-- HAPI HL7 Base -->
+        <dependency>
+            <groupId>ca.uhn.hapi</groupId>
+            <artifactId>hapi-base</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
+        <!-- HAPI HL7 Structures v2.6 -->
+        <dependency>
+            <groupId>ca.uhn.hapi</groupId>
+            <artifactId>hapi-structures-v26</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
+        <!-- HAPI FHIR Core Library -->
+        <dependency>
+            <groupId>ca.uhn.hapi.fhir</groupId>
+            <artifactId>hapi-fhir-base</artifactId>
+            <version>8.4.0</version>
+        </dependency>
+
+        <!-- HAPI FHIR Structures R4 -->
+        <dependency>
+            <groupId>ca.uhn.hapi.fhir</groupId>
+            <artifactId>hapi-fhir-structures-r4</artifactId>
+            <version>8.4.0</version>
         </dependency>
     </dependencies>
 
