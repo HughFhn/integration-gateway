@@ -79,6 +79,13 @@
             <artifactId>camel-hl7-starter</artifactId>
             <version>${camel.version}</version>
         </dependency>
+        <!-- Camel HTTP Component -->
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-http-starter</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+
 
         <!-- MapStruct API -->
         <dependency>
