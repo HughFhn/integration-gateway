@@ -18,12 +18,10 @@ public class Hl7ToFhirRoute extends RouteBuilder {
 
         FhirContext fhirContext = FhirContext.forR4();
         HL7DataFormat hl7 = new HL7DataFormat();
-        hl7.setValidate(false); // Disable HL7 validation for flexibility
 
         from("file:input?include=.*\\.hl7$")
                 .unmarshal(hl7)
                 .routeId("hl7-to-fhir")
-                .unmarshal(hl7) // parse HL7 v2
                 .process(exchange -> {
                     // Get the HL7 message from Camel body
                     Message hl7Message = exchange.getIn().getBody(Message.class);
