@@ -4,6 +4,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.hl7.HL7DataFormat;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.StringType;
 import org.springframework.stereotype.Component;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -40,6 +41,7 @@ public class Hl7ToFhirRoute extends RouteBuilder {
                     String state = terser.get("/PID-11-4");
                     String postalCode = terser.get("/PID-11-5");
                     String country = terser.get("/PID-11-6");
+                    String mothersMaidenName = terser.get("PID-6-1");
 
                     // Build FHIR Patient
                     Patient patient = new Patient();
@@ -47,6 +49,13 @@ public class Hl7ToFhirRoute extends RouteBuilder {
                     // Name setting
                     if (familyName != null || givenName != null) {
                         patient.addName().setFamily(familyName).addGiven(givenName);
+                    }
+
+                    // Add mother's maiden name as an extension (not as part of given names)
+                    if (mothersMaidenName != null && !mothersMaidenName.isEmpty()) {
+                        patient.addExtension()
+                                .setUrl("http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName")
+                                .setValue(new StringType(mothersMaidenName));
                     }
 
                     // Gender setting 

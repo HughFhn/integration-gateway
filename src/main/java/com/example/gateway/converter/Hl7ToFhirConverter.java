@@ -24,7 +24,12 @@ public class Hl7ToFhirConverter {
         Terser terser = new Terser(message);
         Patient patient = new Patient();
         patient.addName().setFamily(terser.get("/PID-5-1")).addGiven(terser.get("/PID-5-2"));
-        patient.setGender("M".equalsIgnoreCase(terser.get("/PID-8-1")) ? Enumerations.AdministrativeGender.MALE : Enumerations.AdministrativeGender.FEMALE);
+        String mothersMaidenName = terser.get("/PID-6-1");
+        if (mothersMaidenName != null && !mothersMaidenName.isEmpty()) {
+            patient.addExtension()
+                    .setUrl("http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName")
+                    .setValue(new org.hl7.fhir.r4.model.StringType(mothersMaidenName));
+        }        patient.setGender("M".equalsIgnoreCase(terser.get("/PID-8-1")) ? Enumerations.AdministrativeGender.MALE : Enumerations.AdministrativeGender.FEMALE);
         String dob = terser.get("/PID-7-1");
         if (dob != null) {
             patient.setBirthDate(new java.text.SimpleDateFormat("yyyyMMdd").parse(dob));
