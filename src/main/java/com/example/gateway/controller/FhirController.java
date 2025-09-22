@@ -7,10 +7,14 @@ import org.springframework.http.ResponseEntity;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.fhir.context.FhirContext;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+
+import java.util.Date;
+
+import static org.apache.camel.component.xslt.XsltOutput.file;
 
 @RestController
 @RequestMapping("/fhir")
@@ -30,10 +34,23 @@ public class FhirController {
         // Convert using centralized converter
         String fhirJson = Hl7ToFhirConverter.convert(message, fhirContext, message.getName());
 
-        // Write to file
+        // Create directory if missing
+        new File("output").mkdirs();
+
         String outputPath = "output/test-fhir.json";
-        Files.write(Paths.get(outputPath), fhirJson.getBytes());
-        System.out.println("FHIR JSON written to: " + outputPath);
+
+        // Date object for audit log
+        Date dateNow = new Date();
+
+        // Write conversion output
+        try (FileWriter fw = new FileWriter(outputPath)) {
+            fw.write(fhirJson);
+        }
+
+        // Write audit log (append mode so you don’t overwrite)
+        try (FileWriter auditWrite = new FileWriter(outputPath, true)) {
+            auditWrite.write("\nConversion performed at " + dateNow);
+        }
 
         // Print to show conversion is done
         System.out.println("\nConversion complete!");
