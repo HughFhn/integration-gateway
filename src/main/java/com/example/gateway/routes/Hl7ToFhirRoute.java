@@ -2,14 +2,13 @@ package com.example.gateway.routes;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.hl7.HL7DataFormat;
-import org.hl7.fhir.r4.model.Enumerations;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.StringType;
 import org.springframework.stereotype.Component;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.util.Terser;
+
+import com.example.gateway.converter.Hl7ToFhirConverter;
 
 @Component
 public class Hl7ToFhirRoute extends RouteBuilder {
@@ -27,78 +26,21 @@ public class Hl7ToFhirRoute extends RouteBuilder {
                     // Get the HL7 message from Camel body
                     Message hl7Message = exchange.getIn().getBody(Message.class);
 
-                    // Use Terser for dynamic field extraction
+                    // Use Terser to extract HL7 message type
                     Terser terser = new Terser(hl7Message);
+                    String messageCode = terser.get("/MSH-9-1");   // e.g. ADT
+                    String triggerEvent = terser.get("/MSH-9-2"); // e.g. A01
+                    String messageType = messageCode + "_" + triggerEvent;
 
-                    // Extract necessary fields from the Hl7 message
-                    String familyName = terser.get("/PID-5-1");
-                    String givenName = terser.get("/PID-5-2");
-                    String genderCode = terser.get("/PID-8-1");
-                    String dob = terser.get("/PID-7-1");
-                    String identifier = terser.get("/PID-3-1");
-                    String addressLine = terser.get("/PID-11-1");
-                    String city = terser.get("/PID-11-3");
-                    String state = terser.get("/PID-11-4");
-                    String postalCode = terser.get("/PID-11-5");
-                    String country = terser.get("/PID-11-6");
-                    String mothersMaidenName = terser.get("PID-6-1");
+                    // Call the converter with detected message type
+                    String fhirJson = Hl7ToFhirConverter.convert(hl7Message, fhirContext, messageType);
 
-                    // Build FHIR Patient
-                    Patient patient = new Patient();
-
-                    // Name setting
-                    if (familyName != null || givenName != null) {
-                        patient.addName().setFamily(familyName).addGiven(givenName);
-                    }
-
-                    // Add mother's maiden name as an extension (not as part of given names)
-                    if (mothersMaidenName != null && !mothersMaidenName.isEmpty()) {
-                        patient.addExtension()
-                                .setUrl("http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName")
-                                .setValue(new StringType(mothersMaidenName));
-                    }
-
-                    // Gender setting 
-                    if ("M".equalsIgnoreCase(genderCode)) {
-                        patient.setGender(Enumerations.AdministrativeGender.MALE);
-                    } else if ("F".equalsIgnoreCase(genderCode)) {
-                        patient.setGender(Enumerations.AdministrativeGender.FEMALE);
-                    } else {
-                        patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
-                    }
-
-                    // Date of Birth setting
-                    if (dob != null && !dob.isEmpty()) {
-                        try {
-                            patient.setBirthDate(new java.text.SimpleDateFormat("yyyyMMdd").parse(dob));
-                        } catch (Exception ignored) {
-                        }
-                    }
-
-                    // identifier setting
-                    if (identifier != null && !identifier.isEmpty()) {
-                        patient.addIdentifier().setSystem("unknown").setValue(identifier);
-                    }
-
-                    // Address setting
-                    if (addressLine != null || city != null || state != null || postalCode != null || country != null) {
-                        patient.addAddress()
-                                .addLine(addressLine)
-                                .setCity(city)
-                                .setState(state)
-                                .setPostalCode(postalCode)
-                                .setCountry(country);
-                    }
-
-                    // Convert FHIR Patient to JSON
-                    String fhirJson = fhirContext.newJsonParser().encodeResourceToString(patient);
-
-                    // Set JSON as message body
+                    // Set FHIR JSON as Camel body
                     exchange.getMessage().setBody(fhirJson);
                 })
                 // Write FHIR JSON to output file
                 .to("file:output?fileName=${file:name.noext}-fhir.json")
-                // Writes to terminal to show conversion is completed
+                // Log completion
                 .log("HL7 -> FHIR conversion completed: ${file:name.noext}-fhir.json");
     }
 }
