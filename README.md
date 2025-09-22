@@ -75,7 +75,7 @@ The following are problems with converting data and running the program.
 To convert a PID that is not native to FHIR you must add an extension URL so FHIR knows what to convert the HL7 data to.
 An example I encountered was converting a patients maiden name which is located in PID-6. In my route since it is an extension, instead of doing something like
 ```java
-.addMothersMaiden(maidenName)
+Patient.addMothersMaiden(maidenName)
 ``` 
 
 you must do the following:
