@@ -23,6 +23,7 @@ import static org.apache.camel.component.xslt.XsltOutput.file;
 public class FhirController {
 
     private final FhirContext fhirContext = FhirContext.forR4();
+    String auditPath = "output/audit.log";
 
     // Convert Hl7 to Fhir Json
     @PostMapping("/convert/hl7-to-fhir")
@@ -50,9 +51,9 @@ public class FhirController {
             fw.write(fhirJson);
         }
 
-        // Write audit log (append mode so you don’t overwrite)
-        try (FileWriter auditWrite = new FileWriter(outputPath, true)) {
-            auditWrite.write("\nConversion performed at " + dateNow);
+        // Write audit log
+        try (FileWriter auditWrite = new FileWriter(auditPath, true)) {
+            auditWrite.write("\nConversion performed at " + dateNow + "\n");
         }
 
         // Print to show conversion is done
@@ -91,8 +92,8 @@ public class FhirController {
         }
 
         // Write audit log (append mode so you don’t overwrite)
-        try (FileWriter auditWrite = new FileWriter(outputPath, true)) {
-            auditWrite.write("\nConversion performed at " + dateNow);
+        try (FileWriter auditWrite = new FileWriter(auditPath, true)) {
+            auditWrite.write("\nConversion performed at " + dateNow + "\n");
         }
 
         // Print to show conversion is done

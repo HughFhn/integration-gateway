@@ -32,6 +32,7 @@ public class FhirToHl7Converter {
         }
         // Map Patient Gender
         if (fhirPatient.hasGender()) {
+            // Made it a string so switch case worked
             String fhirGender = fhirPatient.getGender().toCode();
             switch (fhirGender) {
                 case "male":
@@ -61,7 +62,7 @@ public class FhirToHl7Converter {
                 message.getPID().getDateTimeOfBirth().setValue(dob);
             }
         }
-        // Map Extensions
+        // Map Extensions ** Expand if reuired or using Religion or Citizenship (Look at README for links)
         if (fhirPatient.hasExtension()) {
             // Map Mothers Maiden Name
             Extension maidenName = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName");
@@ -74,7 +75,49 @@ public class FhirToHl7Converter {
             // Add more extensions if needed
             // Extension __ = fhirPatient.getExtensionByUrl(__);
         }
+        // Map Patient Address
+        if (fhirPatient.hasAddress()){
+            Address fhirAddress = fhirPatient.getAddress().get(0);
+            var hl7Address = message.getPID().getPatientAddress(0);
+            if (fhirAddress.hasLine()) {
+                hl7Address.getStreetAddress().getStreetOrMailingAddress().setValue(fhirAddress.getLine().get(0).getValue());
+            }
+            if (fhirAddress.hasCity()) {
+                hl7Address.getCity().setValue(fhirAddress.getCity());
+            }
+            if (fhirAddress.hasState()) {
+                hl7Address.getStateOrProvince().setValue(fhirAddress.getState());
+            }
+            if (fhirAddress.hasPostalCode()) {
+                hl7Address.getZipOrPostalCode().setValue(fhirAddress.getPostalCode());
+            }
+            if (fhirAddress.hasCountry()) {
+                hl7Address.getCountry().setValue(fhirAddress.getCountry());
+            }
+        }
+        // Map Patient Telecom (Phone)
+        if (fhirPatient.hasTelecom()) {
+            for (ContactPoint cp : fhirPatient.getTelecom()) {
+                if (cp.getSystem() == ContactPoint.ContactPointSystem.PHONE) {
+                    String digits = cp.getValue().replaceAll("\\D", ""); // remove +, spaces
+                    if (!digits.isEmpty()) {
+                        var phone = message.getPID().getPhoneNumberHome(0);
+                        phone.getAnyText().setValue(digits);
+                    }
+                }
 
+                if ("email".equals(cp.getSystem().toCode())) {
+                    message.getPID().getPhoneNumberBusiness(0).getTelephoneNumber().setValue(cp.getValue());
+                }
+            }
+        }
+        // Map Martial Status
+        if (fhirPatient.hasMaritalStatus()) {
+            // Decode the marital status portion
+            String maritalCode = fhirPatient.getMaritalStatus().getCodingFirstRep().getCode();
+            // Set the PID according to the code
+            message.getPID().getMaritalStatus().getIdentifier().setValue(maritalCode);
+        }
 
         PipeParser parser = new PipeParser();
         return parser.encode(message);

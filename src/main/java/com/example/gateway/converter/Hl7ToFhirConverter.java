@@ -5,9 +5,7 @@ import ca.uhn.hl7v2.util.Terser;
 
 import org.hl7.fhir.r4.model.*;
 import ca.uhn.fhir.context.FhirContext;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.hl7.fhir.r4.model.codesystems.Relationship;
 
 public class Hl7ToFhirConverter {
 
@@ -41,8 +39,27 @@ public class Hl7ToFhirConverter {
         if (dob != null) {
             patient.setBirthDate(new java.text.SimpleDateFormat("yyyyMMdd").parse(dob));
         }
+
         // gender
-        patient.setGender("M".equalsIgnoreCase(terser.get("/PID-8-1")) ? Enumerations.AdministrativeGender.MALE : Enumerations.AdministrativeGender.FEMALE);
+        String genderCode = terser.get("/PID-8-1");
+        if (genderCode != null) {
+            switch (genderCode.toUpperCase()) {
+                case "M":
+                    patient.setGender(Enumerations.AdministrativeGender.MALE);
+                    break;
+                case "F":
+                    patient.setGender(Enumerations.AdministrativeGender.FEMALE);
+                    break;
+                case "O":
+                    patient.setGender(Enumerations.AdministrativeGender.OTHER);
+                    break;
+                case "U":
+                    patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
+                    break;
+                default:
+                    patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
+            }
+        }
 
         // address object as patient.addAddress only takes address type
         Address address = new Address();
@@ -56,12 +73,14 @@ public class Hl7ToFhirConverter {
         // phone number
         Patient.ContactComponent emergeContact = new Patient.ContactComponent(); // Emergency contact or organisation
         ContactDetail emergContactDetail = new ContactDetail(); // Details on the contact and patient (relationship)
-        ContactPoint contactDetails = new ContactPoint(); // Holds contact info - number, email, etc
+        ContactPoint contactPoint = new ContactPoint(); // Holds contact info - number, email, etc
+
+        // EMERGENCY CONTACT DETAILS ARE NOT IN HL7 UNTIL NK1 (Next of Kin) SECTION LATER
 
         // To set a phone number you must first set a contact point eg: Phone
-        contactDetails.setSystem(ContactPoint.ContactPointSystem.PHONE);
-        contactDetails.setValue(terser.get("/PID-13"));
-        patient.addTelecom(contactDetails); // This requires a ContactPoint type
+        contactPoint.setSystem(ContactPoint.ContactPointSystem.PHONE);
+        contactPoint.setValue(terser.get("/PID-13"));
+        patient.addTelecom(contactPoint); // This requires a ContactPoint type
         return context.newJsonParser().encodeResourceToString(patient);
     }
 
