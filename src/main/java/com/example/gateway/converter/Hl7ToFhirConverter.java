@@ -43,22 +43,7 @@ public class Hl7ToFhirConverter {
         // gender
         String genderCode = terser.get("/PID-8-1");
         if (genderCode != null) {
-            switch (genderCode.toUpperCase()) {
-                case "M":
-                    patient.setGender(Enumerations.AdministrativeGender.MALE);
-                    break;
-                case "F":
-                    patient.setGender(Enumerations.AdministrativeGender.FEMALE);
-                    break;
-                case "O":
-                    patient.setGender(Enumerations.AdministrativeGender.OTHER);
-                    break;
-                case "U":
-                    patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
-                    break;
-                default:
-                    patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
-            }
+            getGenderDisplay(patient, genderCode);
         }
 
         // address object as patient.addAddress only takes address type
@@ -81,7 +66,50 @@ public class Hl7ToFhirConverter {
         contactPoint.setSystem(ContactPoint.ContactPointSystem.PHONE);
         contactPoint.setValue(terser.get("/PID-13"));
         patient.addTelecom(contactPoint); // This requires a ContactPoint type
+
+        // Marital Status
+        // Marital Status
+        String maritalStatusCode = terser.get("/PID-16"); // e.g. "M" for Married, "S" for Single
+
+        if (maritalStatusCode != null && !maritalStatusCode.isEmpty()) {
+            CodeableConcept maritalStatus = new CodeableConcept();
+
+            maritalStatus.addCoding()
+                    .setSystem("http://terminology.hl7.org/CodeSystem/v3-MaritalStatus")
+                    .setCode(maritalStatusCode)
+                    .setDisplay(getMaritalStatusDisplay(maritalStatusCode));
+
+            patient.setMaritalStatus(maritalStatus);
+        }
+
+
+        // Return Json
         return context.newJsonParser().encodeResourceToString(patient);
     }
+
+
+    private static String getMaritalStatusDisplay(String code) {
+        return switch (code) {
+            case "M" -> "Married";
+            case "S" -> "Never Married";
+            case "D" -> "Divorced";
+            case "W" -> "Widowed";
+            case "L" -> "Legally Separated";
+            case "U" -> "Unmarried";
+            default -> "Unknown";
+        };
+    }
+
+
+    private static Patient getGenderDisplay(Patient patient, String code) {
+        return switch (code.toUpperCase()) {
+            case "M" -> patient.setGender(Enumerations.AdministrativeGender.MALE);
+            case "F" -> patient.setGender(Enumerations.AdministrativeGender.FEMALE);
+            case "O" -> patient.setGender(Enumerations.AdministrativeGender.OTHER);
+            case "U" -> patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
+            default -> patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
+        };
+    }
+
 
 }
