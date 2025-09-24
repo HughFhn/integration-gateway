@@ -1,5 +1,6 @@
 package com.example.gateway.converter;
 
+import ca.uhn.hl7v2.model.v26.datatype.CWE;
 import ca.uhn.hl7v2.model.v26.datatype.XPN;
 import ca.uhn.hl7v2.model.v26.message.ADT_A01;
 import ca.uhn.hl7v2.parser.PipeParser;
@@ -15,6 +16,7 @@ public class FhirToHl7Converter {
         // Map Patient Name
         if (fhirPatient.hasName()) {
             HumanName fhirName = fhirPatient.getNameFirstRep();
+            // XPN is a data structure of how names are formatted in HL7
             XPN hl7Name = message.getPID().getPatientName(0);
 
             if (fhirName.hasFamily()) {
@@ -22,12 +24,13 @@ public class FhirToHl7Converter {
             }
 
             if (fhirName.hasGiven()) {
-                StringBuilder givenNames = new StringBuilder();
-                for (StringType given : fhirName.getGiven()) {
-                    if (!givenNames.isEmpty()) givenNames.append("^");
-                    givenNames.append(given.getValue());
+                if (!fhirName.getGiven().isEmpty()) {
+                    hl7Name.getGivenName().setValue(fhirName.getGiven().get(0).getValue());
                 }
-                hl7Name.getGivenName().setValue(givenNames.toString());
+                if (fhirName.getGiven().size() > 1) {
+                    hl7Name.getSecondAndFurtherGivenNamesOrInitialsThereof()
+                            .setValue(fhirName.getGiven().get(1).getValue());
+                }
             }
         }
         // Map Patient Gender
@@ -63,18 +66,34 @@ public class FhirToHl7Converter {
             }
         }
         // Map Extensions ** Expand if reuired or using Religion or Citizenship (Look at README for links)
-        if (fhirPatient.hasExtension()) {
-            // Map Mothers Maiden Name
-            Extension maidenName = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName");
-            if (maidenName != null && maidenName.getValue() instanceof StringType) {
-                // Cast as String and extract raw String type from java
-                String maidenNameValue = ((StringType) maidenName.getValue()).getValue();
-                // Get PID section on 1st repitition and cast the name as a surname as it is
-                message.getPID().getMotherSMaidenName(0).getFamilyName().getSurname().setValue(maidenNameValue);
-            }
-            // Add more extensions if needed
-            // Extension __ = fhirPatient.getExtensionByUrl(__);
+
+        // Map Mothers Maiden Name
+        Extension maidenName = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName");
+        if (maidenName != null && maidenName.getValue() instanceof StringType) {
+            // Cast as String and extract raw String type from java
+            String maidenNameValue = ((StringType) maidenName.getValue()).getValue();
+            // Get PID section on 1st repitition and cast the name as a surname as it is
+            message.getPID().getMotherSMaidenName(0).getFamilyName().getSurname().setValue(maidenNameValue);
         }
+
+        // Add lookup feature ? so --Codes -> Display without input to Json
+        // Map Religion
+        Extension religion = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/StructureDefinition/religion");
+        if (religion != null && religion.getValue() instanceof CodeableConcept) {
+            CodeableConcept religionValue = (CodeableConcept) religion.getValue();
+            if (religionValue.hasCoding()) {
+                // Get the code and display name from the coding
+                Coding coding = religionValue.getCodingFirstRep(); // Such as 1001 == Baptist
+
+                // Must create Coded Element to format correctly (Before coded element result was "^1009\S\Baptist" - Happens if the set value is one long string
+                CWE hl7Religion = message.getPID().getReligion();
+                hl7Religion.getIdentifier().setValue(coding.getCode()); // Religion code
+                hl7Religion.getText().setValue(coding.getDisplay());    // Name from display var
+            }
+        }
+        // Add more extensions if needed
+        // Extension __ = fhirPatient.getExtensionByUrl(__);
+
         // Map Patient Address
         if (fhirPatient.hasAddress()){
             Address fhirAddress = fhirPatient.getAddress().get(0);
@@ -96,6 +115,7 @@ public class FhirToHl7Converter {
             }
         }
         // Map Patient Telecom (Phone)
+        // FIX PHONE AS ONLY DUMPS RAW
         if (fhirPatient.hasTelecom()) {
             for (ContactPoint cp : fhirPatient.getTelecom()) {
                 if (cp.getSystem() == ContactPoint.ContactPointSystem.PHONE) {
@@ -118,7 +138,22 @@ public class FhirToHl7Converter {
             // Set the PID according to the code
             message.getPID().getMaritalStatus().getIdentifier().setValue(maritalCode);
         }
+        // Map languages
+        if (fhirPatient.hasCommunication()){
+            Patient.PatientCommunicationComponent communication = fhirPatient.getCommunicationFirstRep();
+            if (communication.hasLanguage() && communication.getLanguage().hasCoding()){
+                Coding language = communication.getLanguage().getCodingFirstRep();
+                if (language.hasCode()) {
+                    message.getPID().getPrimaryLanguage().getIdentifier().setValue(language.getCode());
+                }
+            }
+            else if (communication.hasLanguage() && communication.getLanguage().hasText()){
+                // IF NO CODE JUST STORE TEXT
+                message.getPID().getPrimaryLanguage().getText().setValue(communication.getLanguage().getText());
+            }
+        }
 
+        // Create parser to encode message
         PipeParser parser = new PipeParser();
         return parser.encode(message);
     }
