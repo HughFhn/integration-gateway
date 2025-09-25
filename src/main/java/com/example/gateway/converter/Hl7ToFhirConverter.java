@@ -3,11 +3,11 @@ package com.example.gateway.converter;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.util.Terser;
 
+import com.example.gateway.maps.MapperService;
 import org.hl7.fhir.r4.model.*;
 import ca.uhn.fhir.context.FhirContext;
-import org.hl7.fhir.r4.model.codesystems.Relationship;
 
-public class Hl7ToFhirConverter {
+public class Hl7ToFhirConverter extends MapperService {
 
     public static String convert(Message hl7Message, FhirContext fhirContext, String messageType) throws Exception {
         switch (messageType) {
@@ -44,8 +44,10 @@ public class Hl7ToFhirConverter {
         // gender
         String genderCode = terser.get("/PID-8-1");
         if (genderCode != null) {
-            getGenderDisplay(patient, genderCode);
+            MapperService mapperService = new MapperService();
+            mapperService.setGender(patient, genderCode);
         }
+
 
         // address object as patient.addAddress only takes address type
         Address address = new Address();
@@ -68,16 +70,18 @@ public class Hl7ToFhirConverter {
         contactPoint.setValue(terser.get("/PID-13"));
         patient.addTelecom(contactPoint); // This requires a ContactPoint type
 
-        // Language
+
+        // Language mapping
         String languageInput = terser.get("/PID-15");
         if (languageInput != null && !languageInput.isEmpty()) {
             Patient.PatientCommunicationComponent communication = new Patient.PatientCommunicationComponent();
             CodeableConcept languageConcept = new CodeableConcept();
 
-            // Use FHIR standard codes (bcp 47) as in this link: https://terminology.hl7.org/ValueSet-Languages.html
+            String code = new Hl7ToFhirConverter().getLanguageCode(languageInput);
+
             languageConcept.addCoding()
                     .setSystem("urn:ietf:bcp:47")
-                    .setCode(getLanguageDisplay(languageInput))
+                    .setCode(code)
                     .setDisplay(languageInput);
 
             communication.setLanguage(languageConcept);
@@ -120,32 +124,6 @@ public class Hl7ToFhirConverter {
 
     // ================ Helpers to get display values for encoded features ================
 
-    // Helper for gender
-    private static void getGenderDisplay(Patient patient, String code) {
-         switch (code.toUpperCase()) {
-            case "M" -> patient.setGender(Enumerations.AdministrativeGender.MALE);
-            case "F" -> patient.setGender(Enumerations.AdministrativeGender.FEMALE);
-            case "O" -> patient.setGender(Enumerations.AdministrativeGender.OTHER);
-            case "U" -> patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
-            default -> patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
-        };
-    }
-
-    private static String getLanguageDisplay(String languageInput) {
-        return switch (languageInput.toUpperCase()) {
-            case "ENGLISH", "ENG" -> "en";
-            case "GAEILGE", "IRISH", "GA" -> "ga";
-            case "FRENCH", "FR" -> "fr";
-            case "SPANISH", "SP", "ES" -> "es";
-            case "GERMAN", "DE", "GER" -> "de";
-            case "POLISH", "PL", "POL" -> "pl";
-            case "UKRANIAN", "UK", "UKR" -> "uk";
-            case "LITHUANIAN", "LT", "LITH" -> "lt";
-            case "ROMANIAN", "RO", "ROMANIA" -> "ro";
-            default -> "UNKNOWN_CODE";
-        };
-    }
-
     // Helper for marital status
     private static String getMaritalStatusDisplay(String code) {
         return switch (code) {
@@ -169,9 +147,8 @@ public class Hl7ToFhirConverter {
             case "PRES" -> "Presbyterian";
             case "MUS"  -> "Muslim";
             case "HIND" -> "Hindu";
-            default     -> "Unknown Religion";
+            default -> "Unknown Religion";
         };
     }
-
 
 }
