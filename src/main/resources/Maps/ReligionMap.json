@@ -1,0 +1,13 @@
+{
+  "1001": { "code": "1001", "display": "Adventist", "fhir": "Adventist" },
+  "1005": { "code": "1005", "display": "Anglican", "fhir": "Anglican" },
+  "1013": { "code": "1013", "display": "Christian (non-Catholic, non-specific)", "fhir": "Christian" },
+  "1041": { "code": "1041", "display": "Roman Catholic Church", "fhir": "Catholic" },
+  "1036": { "code": "1036", "display": "Orthodox", "fhir": "Orthodox" },
+  "1023": { "code": "1023", "display": "Islam", "fhir": "Muslim" },
+  "1008": { "code": "1008", "display": "Babi & Baha'I faiths", "fhir": "Baha'i" },
+  "1008": { "code": "1008", "display": "Babi & Baha'I faiths", "fhir": "Baha'i" },
+  "1007": { "code": "1007", "display": "Atheism", "fhir": "Atheist" },
+  "1050": { "code": "1050", "display": "Taoism", "fhir": "Taoism" },
+  "1004": { "code": "1004", "display": "Agnosticism", "fhir": "Agnostic" }
+}
