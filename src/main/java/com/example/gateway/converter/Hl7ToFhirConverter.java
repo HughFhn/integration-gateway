@@ -95,60 +95,25 @@ public class Hl7ToFhirConverter extends MapperService {
         if (maritalStatusCode != null && !maritalStatusCode.isEmpty()) {
             CodeableConcept maritalStatus = new CodeableConcept();
 
+            MapperService mapperService = new MapperService();
+
             maritalStatus.addCoding()
                     .setSystem("http://terminology.hl7.org/CodeSystem/v3-MaritalStatus")
                     .setCode(maritalStatusCode)
-                    .setDisplay(getMaritalStatusDisplay(maritalStatusCode));
+                    .setDisplay(mapperService.getMaritalStatus(maritalStatusCode));
 
             patient.setMaritalStatus(maritalStatus);
         }
 
-        // Change to Religious Affiliation Codes : Link is in system |
-        String religionCode = terser.get("/PID-17-1");           //  ^
-        if (religionCode != null && !religionCode.isEmpty()) {
-            CodeableConcept religion = new CodeableConcept();
-            religion.addCoding()
-                    .setSystem("http://terminology.hl7.org/CodeSystem/v3-ReligiousAffiliation")
-                    .setCode(religionCode)
-                    .setDisplay(getReligionDisplay(religionCode)); // helper for human-readable display
-
-            patient.addExtension(
-                    new Extension("http://hl7.org/fhir/StructureDefinition/patient-religion", religion)
-            );
+        // Change to Religious Affiliation Codes
+        String religionCode = terser.get("/PID-17");
+        if (religionCode != null) {
+            MapperService mapperService = new MapperService();
+            mapperService.setReligionToFhir(patient, religionCode);
         }
-
 
         // Return Json
         return context.newJsonParser().encodeResourceToString(patient);
-    }
-
-    // ================ Helpers to get display values for encoded features ================
-
-    // Helper for marital status
-    private static String getMaritalStatusDisplay(String code) {
-        return switch (code) {
-            case "M" -> "Married";
-            case "S" -> "Never Married";
-            case "D" -> "Divorced";
-            case "W" -> "Widowed";
-            case "L" -> "Legally Separated";
-            case "U" -> "Unmarried";
-            default -> "Unknown";
-        };
-    }
-
-    // Helper for religion
-    private static String getReligionDisplay(String code) {
-        return switch (code) {
-            case "CATH" -> "Catholic";
-            case "JEW"  -> "Judaism";
-            case "BAPT" -> "Baptist";
-            case "METH" -> "Methodist";
-            case "PRES" -> "Presbyterian";
-            case "MUS"  -> "Muslim";
-            case "HIND" -> "Hindu";
-            default -> "Unknown Religion";
-        };
     }
 
 }

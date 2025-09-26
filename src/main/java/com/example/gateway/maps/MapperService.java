@@ -5,6 +5,9 @@ import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.Patient;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+
 import java.io.InputStream;
 import java.util.Map;
 
@@ -57,4 +60,48 @@ public class MapperService {
                 patient.setGender(Enumerations.AdministrativeGender.UNKNOWN);
         }
     }
+
+    // Marital status get func with Json
+    public String getMaritalStatus(String code) {
+        if (code == null) return "UNKNOWN_CODE";
+        return getCode("Maps/MaritalStatus.json", code);
+    }
+
+    public Map<String, String> getReligion(String code) {
+        try{
+            ObjectMapper objectMapper = new ObjectMapper();
+            InputStream is = getClass().getClassLoader().getResourceAsStream("Maps/ReligionMap.json");
+            if (is == null) {
+                throw new RuntimeException("Mapping file not found: Maps/ReligionMap.json");
+            }
+        Map<String, Map<String, String>> mappings = objectMapper.readValue(is, Map.class);
+        return mappings.get(code.trim());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load mapping:", e);
+        }
+    }
+
+    public void setReligionToFhir(Patient patient, String code) {
+        Map<String, String> entry = getReligion(code);
+
+        if (entry != null) {
+            // Adding the extension
+            patient.addExtension()
+                    .setUrl("http://hl7.org/fhir/StructureDefinition/patient-religion")
+                    .setValue(new org.hl7.fhir.r4.model.CodeableConcept()
+                        .addCoding(new org.hl7.fhir.r4.model.Coding()
+                            .setSystem("http://terminology.hl7.org/CodeSystem/v3-ReligiousAffiliation")
+                            .setCode(entry.get("code"))
+                            .setDisplay(entry.get("display")))
+                        .setText(entry.get("fhir")));
+        }
+        else {
+            // If unknown religion
+            patient.addExtension()
+                    .setUrl("http://hl7.org/fhir/StructureDefinition/patient-religion")
+                    .setValue(new org.hl7.fhir.r4.model.CodeableConcept().setText("UNKNOWN"));
+        }
+
+    }
 }
+
