@@ -90,7 +90,7 @@ public class Hl7ToFhirConverter extends MapperService {
         }
 
         // Marital Status
-        String maritalStatusCode = terser.get("/PID-16"); // e.g. "M" for Married, "S" for Single
+        String maritalStatusCode = terser.get("/PID-16");
 
         if (maritalStatusCode != null && !maritalStatusCode.isEmpty()) {
             CodeableConcept maritalStatus = new CodeableConcept();
@@ -110,6 +110,23 @@ public class Hl7ToFhirConverter extends MapperService {
         if (religionCode != null) {
             MapperService mapperService = new MapperService();
             mapperService.setReligionToFhir(patient, religionCode);
+        }
+
+        // Ethnicity
+        String ethnicInput =  terser.get("/PID-22");
+        if (ethnicInput != null && !ethnicInput.isEmpty()) {
+            MapperService mapperService = new MapperService();
+            String ethnicCode = mapperService.getEthnicCode(ethnicInput);
+            CodeableConcept ethnicity = new CodeableConcept();
+
+            ethnicity.addCoding()
+                    .setSystem("http://hl7.org/fhir/v3/Ethnicity")
+                    .setCode(ethnicCode)
+                    .setDisplay(ethnicInput);
+
+            patient.addExtension()
+                    .setUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity")
+                    .setValue(ethnicity);
         }
 
         // Return Json

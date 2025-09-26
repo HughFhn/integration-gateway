@@ -101,7 +101,12 @@ public class MapperService {
                     .setUrl("http://hl7.org/fhir/StructureDefinition/patient-religion")
                     .setValue(new org.hl7.fhir.r4.model.CodeableConcept().setText("UNKNOWN"));
         }
+    }
+    public String getEthnicCode(String ethnicityInput){
+        if (ethnicityInput == null) return "UNKNOWN_CODE";
+        return getCode("Maps/EthnicityMap.json", ethnicityInput);
 
     }
+
 }
 
