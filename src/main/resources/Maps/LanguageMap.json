@@ -1,0 +1,35 @@
+{
+  "ENGLISH": "en",
+  "ENG": "en",
+
+  "GAEILGE": "ga",
+  "IRISH": "ga",
+  "GA": "ga",
+
+  "FRENCH": "fr",
+  "FR": "fr",
+
+  "SPANISH": "es",
+  "SP": "es",
+  "ES": "es",
+
+  "GERMAN": "de",
+  "DE": "de",
+  "GER": "de",
+
+  "POLISH": "pl",
+  "PL": "pl",
+  "POL": "pl",
+
+  "UKRAINIAN": "uk",
+  "UK": "uk",
+  "UKR": "uk",
+
+  "LITHUANIAN": "lt",
+  "LT": "lt",
+  "LITH": "lt",
+
+  "ROMANIAN": "ro",
+  "RO": "ro",
+  "ROMANIA": "ro"
+}

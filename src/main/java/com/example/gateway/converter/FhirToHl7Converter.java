@@ -65,7 +65,7 @@ public class FhirToHl7Converter {
                 message.getPID().getDateTimeOfBirth().setValue(dob);
             }
         }
-        // Map Extensions ** Expand if reuired or using Religion or Citizenship (Look at README for links)
+        // ========== Map Extensions ** Expand if reuired or using Religion or Citizenship (Look at README for links) ==========================
 
         // Map Mothers Maiden Name
         Extension maidenName = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName");
@@ -78,7 +78,7 @@ public class FhirToHl7Converter {
 
         // Add lookup feature ? so --Codes -> Display without input to Json
         // Map Religion
-        Extension religion = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/StructureDefinition/religion");
+        Extension religion = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/StructureDefinition/patient-religion");
         if (religion != null && religion.getValue() instanceof CodeableConcept) {
             CodeableConcept religionValue = (CodeableConcept) religion.getValue();
             if (religionValue.hasCoding()) {
@@ -91,6 +91,30 @@ public class FhirToHl7Converter {
                 hl7Religion.getText().setValue(coding.getDisplay());    // Name from display var
             }
         }
+
+        Extension ethnicity = fhirPatient.getExtensionByUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
+        if (ethnicity != null) {
+            for (Extension innerExt : ethnicity.getExtension()) {
+                if ((innerExt.getUrl().equals("ombCategory") || innerExt.getUrl().equals("detailed"))
+                        && innerExt.getValue() instanceof Coding) {
+                    Coding coding = (Coding) innerExt.getValue();
+
+                    CWE hl7Ethnicity = message.getPID().getEthnicGroup(0);
+                    hl7Ethnicity.getIdentifier().setValue(coding.getCode());
+                    hl7Ethnicity.getText().setValue(coding.getDisplay());
+                    if (coding.hasSystem()) {
+                        hl7Ethnicity.getNameOfCodingSystem().setValue(coding.getSystem());
+                    }
+                }
+
+                // Fallback if no coding is present but text is
+                if (innerExt.getUrl().equals("text") && innerExt.getValue() instanceof StringType) {
+                    CWE hl7Ethnicity = message.getPID().getEthnicGroup(0);
+                    hl7Ethnicity.getText().setValue(((StringType) innerExt.getValue()).getValue());
+                }
+            }
+        }
+
         // Add more extensions if needed
         // Extension __ = fhirPatient.getExtensionByUrl(__);
 

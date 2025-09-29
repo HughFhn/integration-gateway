@@ -86,6 +86,11 @@
             <version>${camel.version}</version>
         </dependency>
 
+        <!-- FasterXML Jackson Component -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
 
         <!-- MapStruct API -->
         <dependency>
@@ -101,7 +106,31 @@
             <version>${mapstruct.version}</version>
             <scope>provided</scope>
         </dependency>
-        
+
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- This includes OAuth2 Resource Server + JOSE/JWT support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <!-- Only needed if you're implementing OAuth2 login/client -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <version>23.0.7</version>
+        </dependency>
+
         <!-- HAPI HL7 Base -->
         <dependency>
             <groupId>ca.uhn.hapi</groupId>

@@ -1,0 +1,13 @@
+{
+  "A": "Annulled",
+  "D": "Divorced",
+  "I": "Interlocutory",
+  "L": "Legally Seperated",
+  "P": "Polygamous",
+  "S": "Never Married",
+  "T": "Domestic Partner",
+  "M": "Married",
+  "W": "Widowed",
+  "U": "unmarried",
+  "UNK": "unknown"
+}
