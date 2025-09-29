@@ -19,8 +19,57 @@ In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly
 | Mapper       | MapStruct             | 1.6.x                   | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |
 
 ---
-# How to Use:
+# Current File Structure
 
+```
+├── Dockerfile
+├── pom.xml
+├── README.md
+├── target
+	├── gateway-0.0.1-SNAPSHOT.jar
+	└── classes
+		├── application.properties
+		└── Maps
+			├── GenderMap.json
+			├── LanguageMap.json
+			├── MaritalStatus.json
+			└── ReligionMap.json
+├── input
+	└── .camel
+		├── test.hl7
+		└── test.json
+├── output
+	├── audit.log
+	├── test-fhir.json
+	└── test-hl7.hl7
+└── src
+    └── main
+	    ├── java
+		    └── com
+			    └── example
+					└── gateway
+						├── controller
+							└── FhirController
+						├── converter
+							├── FhirToHl7Converter
+							└── Hl7ToFhirConverter
+						├── maps
+							└── MapperService
+						├── routes
+							├── FhirToHl7Route
+							└── Hl7ToFhirRoute
+						└── GatewayApplication
+		└── resources
+			└── Maps
+				├── GenderMap.json
+				├── LanguageMap.json
+				├── MaritalStatus.json
+				└── ReligionMap.json
+```
+
+
+---
+# How to Use:
 ### How to run HL7 to FHIR Json:
 In the terminal type the following to build the jar file:
 
