@@ -1,0 +1,65 @@
+#=== Get New Token ===
+$response = Invoke-RestMethod `
+    -Uri 'http://localhost:8080/realms/FhirGateway/protocol/openid-connect/token' `
+    -Method Post `
+    -ContentType 'application/x-www-form-urlencoded' `
+    -Body @{
+        client_id     = 'myClient'
+        client_secret = 'YOUR_CLIENT_SECRET' !!!
+        grant_type    = 'refresh_token'
+        refresh_token = $refreshToken
+    }
+
+$token        = $response.access_token
+$refreshToken = $response.refresh_token
+
+
+
+#=== Test token request ===
+try {
+    $response = Invoke-RestMethod `
+        -Uri 'http://localhost:8080/realms/FhirGateway/protocol/openid-connect/token' `
+        -Method Post `
+        -ContentType 'application/x-www-form-urlencoded' `
+        -Body @{
+            client_id = 'myClient'
+            username = ''
+            password = ''
+            grant_type = 'password'
+        }
+    
+    Write-Host "SUCCESS! Token received" -ForegroundColor Green
+    $token = $response.access_token
+    Write-Host "Token: $($token.Substring(0, 50))..." -ForegroundColor Cyan
+    Write-Host "Expires in: $($response.expires_in) seconds" -ForegroundColor Yellow
+    
+} catch {
+    Write-Host "FAILED to get token" -ForegroundColor Red
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+    
+    # Show detailed error
+    $errorDetails = $_.ErrorDetails.Message | ConvertFrom-Json
+    Write-Host "Error code: $($errorDetails.error)" -ForegroundColor Red
+    Write-Host "Description: $($errorDetails.error_description)" -ForegroundColor Red
+}
+
+
+
+#=== Request hl7 conversion ===
+$hl7Content = Get-Content -Path "test.hl7" -Raw
+ Invoke-RestMethod `
+     -Uri 'http://localhost:8081/fhir/convert/hl7-to-fhir' `
+     -Method Post `
+     -Headers @{Authorization = "Bearer $token"} `
+     -ContentType 'text/plain' `
+     -Body $hl7Content
+
+
+#=== Request fhir conversion ===
+$fhirContent = Get-Content -Path "test.hl7" -Raw
+ Invoke-RestMethod `
+     -Uri 'http://localhost:8081/fhir/convert/fhir-to-hl7'`
+     -Method Post `
+     -Headers @{Authorization = "Bearer $token"} `
+     -ContentType 'application/json' `
+     -Body $jsonContent

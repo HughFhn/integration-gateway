@@ -8,7 +8,7 @@ WORKDIR /app
 COPY target/gateway-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose Spring Boot port
-EXPOSE 8080
+EXPOSE 8081
 
 # Run the JAR
 ENTRYPOINT ["java","-jar","app.jar"]
