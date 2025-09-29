@@ -74,6 +74,23 @@
           }
         ]
       }
+    },
+    {
+      "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+      "extension": [
+        {
+          "url": "ombCategory",
+          "valueCoding": {
+            "code": "2135-2",
+            "display": "Hispanic or Latino"
+          }
+        },
+        {
+          "url": "Hispanic or Latino",
+          "valueString": "Hispanic or Latino"
+        }
+      ]
     }
+
   ]
 }
