@@ -7,16 +7,16 @@ In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly
 
 # The Following is the Stack of the Project.
 
-| Layer        | Choice                | Version                 | Notes                                                                                       |
-|--------------|-----------------------|-------------------------|---------------------------------------------------------------------------------------------|
-| JDK          | Temurin / Oracle Java | 21 LTS                  | Current LTS. Plan a test branch for Java 25 LTS after it drops in Sept 2025. (Oracle, Java) |
-| Spring Boot  | 3.5.x                 | 3.5.5 current           | Aligns with Spring Framework 6.2.x production line. (Home, GitHub)                          |
-| Apache Camel | 4.14.0 (LTS)          | Aug 19, 2025            | If you want a slightly longer-tested LTS, 4.10.6 LTS is also available. (Apache Camel)      |
-| Build        | Maven                 | 3.9.11                  | Latest general availability. (Apache Maven)                                                 |
-| FHIR SDK     | HAPI FHIR             | 8.x (R4/R4B/R5 support) | R4B supported since 6.2; current 8.x artifacts available. (hapifhir.io, Maven Repository)   |
-| JSONPath     | jayway/json-path      | 2.9.0                   | Stable; widely used. (Maven Repository, GitHub)                                             |
-| XPath        | JAXP (built-in)       | —                       | Use Java’s XPathFactory (no extra dep)                                                      |
-| Mapper       | MapStruct             | 1.6.x                   | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |
+| Layer                 | Choice                | Version                 | Notes                                                                                       |
+|-----------------------|-----------------------|-------------------------|---------------------------------------------------------------------------------------------|
+| JDK                   | Temurin / Oracle Java | 21 LTS                  | Current LTS. Plan a test branch for Java 25 LTS after it drops in Sept 2025. (Oracle, Java) |
+| Application Framework | Spring Boot           | 3.5.5 current           | Aligns with Spring Framework 6.2.x production line. (Home, GitHub)                          |
+| Middle-ware Framework | Apache Camel          | 4.14.0 (LTS)             | If you want a slightly longer-tested LTS, 4.10.6 LTS is also available. (Apache Camel)      |
+| Build                 | Maven                 | 3.9.11                  | Latest general availability. (Apache Maven)                                                 |
+| FHIR SDK              | HAPI FHIR             | 8.x (R4/R4B/R5 support) | R4B supported since 6.2; current 8.x artifacts available. (hapifhir.io, Maven Repository)   |
+| IDP + Authenticator   | Keycloak              | 26.3.5                  | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |
+| TLS Library           | OpenSSL               | 3.0 (GA + LTS)            | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |
+
 
 ---
 # Current File Structure
@@ -49,15 +49,15 @@ In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly
 			    └── example
 					└── gateway
 						├── controller
-							└── FhirController
+							└── FHIRController
 						├── converter
-							├── FhirToHl7Converter
-							└── Hl7ToFhirConverter
+							├── FHIRToHl7Converter
+							└── Hl7ToFHIRConverter
 						├── maps
 							└── MapperService
 						├── routes
-							├── FhirToHl7Route
-							└── Hl7ToFhirRoute
+							├── FHIRToHl7Route
+							└── Hl7ToFHIRRoute
 						└── GatewayApplication
 		└── resources
 			└── Maps
@@ -139,8 +139,15 @@ The file then moves on to the Apache Camel Route so the program will know how th
 
 ---
 ### Overview
-My one observation between the two conversions is that FHIR Json to HL7 is much more verbose and complicated. The terser and hl7 fhir libraries are very simple and easy to use. When writing it flows much better.  
-This maybe due to the fact that HL7 is more complex so formatting is more difficult or that it is a legacy format so moving away from it should be simple.
+My one observation between the two conversions is that FHIR Json to HL7 is much more verbose and complicated. The terser and hl7 fhir libraries are very simple and easy to use. When writing it flows much better. This maybe due to the fact that HL7 is more complex so formatting is more difficult or that it is a legacy format so moving away from it should be simple.
+
+---
+# Authorization
+Authorization is handled by Keycloak, an opensource authorization, Identity Provider (IdP) and authentication application which supports features like single sign on and role based access control. Access management is crucial for a project like this as it handles transfers of patients personal/ medical data. This is why protocols like OpenID, OAuth 2.0 and SAML are features present in Keycloak.
+For testing Keycloak, Postman was used to simulate POST and GET requests. Docker also ensures that the application is stable across most systems and any glaring issues would be found in that.
+The first bean in ``SecurityConfig.java`` is used as a filter. It disables cross site request forgery for potential attacks and then defines the endpoints that different roles are able to access.
+There is an OAuth process running to validate the Java Web Token from Keycloak.
+The next bean is an authenticator converter grabbing the roles from the realm in Keycloak from the JWT and validating and setting them.
 
 ---
 # Problems Encountered:
@@ -168,15 +175,24 @@ Defining extensions, sub-extensions and retrieving values from extensions: https
 
 <a id="section_id"></a>
 List of PID and there corresponding value and if they require extensions: https://build.fhir.org/ig/HL7/v2-to-fhir/ConceptMap-segment-pid-to-patient.html
+This Should be your bible when converting PID to Patient Map. Data types, links, and objects are specified per PID with additional notes available.
 
 Extension Registry: https://build.fhir.org/ig/HL7/fhir-extensions/extension-registry.html
+
+When requesting an access token in Postman for testing the Keycloak authentication layer, Postman would often set the access token as the ID token for the requests. This was an issue as I was unable to diagnose it due to the verbose token messages. If repeated 401 unauthorized errors occur, try looking at the access token or the terminal may say if a token is expired and a new one is needed.
 
 ---
 ## Misc. Intricacies
 
-When adding information to the `Patient` object, for adding X there is usually a ``.setX`` method but some of these take only the types of what they are setting. 
-For example, if setting an address, you would use ``.setAddress(*Address goes here*)`` but that address you are adding must be an address object. 
-When creating an Address object there are methods to set streets, city, etc.
+When adding information to the `Patient` object, for adding X there is usually a ``.setX`` method but some of these take only the types of what they are setting. For example, if setting an address, you would use ``.setAddress(*Address goes here*)`` but that address you are adding must be an address object. When creating an Address object there are methods to set streets, city, etc.
+
+### Status Codes:
+**404 - Not Found:** If you recieve this error the problem is most likely due to the route or PostMapping in your Controller file. This means that the endpoint could not be located.
+
+**500 - Internal Server Error:** This is a generic HTTP code but in my experience with FHIR Gate, I have found it to be an issue with the code that is not picked up by the IDE. Check spellings, route in the http and check the input (Dont try to convert a HL7 when it is looking for a Json).
+
+**200 - Ok:** This code means that the request was successful so if you are still encountering a problem it is not something to do with the POST or GET requests, routing or input.
+
 
 ---
 # Considerations:
@@ -207,18 +223,36 @@ Link: https://docs.smarthealthit.org/authorization/best-practices/
 - Authentication codes, client credentials and other sensitive information should be conducted over links that have been secured using TLS.
 - OAuth Grant Models:
     - RFC 6749  - Enables authentication server to share directly to end users not exposing to user agents like browsers. Requires user implements CSRF (Cross-Site Request Forgery) protection.
-    - If the transmitting of a JSON Web Token is required then RFC7523 is recommended.
+    - If the transmitting of a Json Web Token is required then RFC7523 is recommended.
 - Refresh tokens should have a significantly longer lifetime than access tokens.
 - Refresh tokens are good as they reduce the risk of unwanted access.
 - Client Credential flow OAuth2. (Good for FHIR Gateway -> REDCap/ DHIS2)
-    - Used for machine to machine communication allowing an application to authenticate resources without user involvement. It uses client ID and a client secret 
-  (Long and confidential string of characters issued by the authentication server after application registration.) to gain an access token from the authentication server which is required to gain access to the resources.
-
+    - Used for machine to machine communication allowing an application to authenticate resources without user involvement. It uses client ID and a client secret (Long and confidential string of characters issued by the authentication server after application registration.) to gain an access token from the authentication server which is required to gain access to the resources.
+- Implementing a third party Multi-Factor Authentication tool like Google Authenticator/ Authy/ Microsoft Authenticator.
 ## Implementation:
 * Using the available Hl7 to FHIR would simplify the process. It is open source so modifications can be applied if needed.  
 *(GitRepo to FHIR to Hl7V2 converter: https://github.com/CDCgov/prime-fhir-converter?tab=readme-ov-file )*
 * Hl7 to FHIR is currently implemented. 
 * Server needed to audit and authenticate GET and POST requests.
+* The following link is Implementation considerations from there HL7 to FHIR website: https://build.fhir.org/ig/HL7/v2-to-fhir/implementation_considerations.html
+* Here is a Java REDCap API Library on GitHub as Java is not natively supported: https://github.com/altierifIOV/REDCapAPILibrary/tree/main
+  *Python is if implementation on that is required and Java is too difficult*
+* DHIS2 supports transformation to FHIR: https://dhis2.org/integration/fhir/
+  *Includes video in which they show code of conversion from DHIS2 to fhir*
+* DHIS2 -> FHIR repo: https://github.com/dhis2/integration-examples/tree/main/dhis2-to-fhir-bundle *important can be implemented*
+* DHIS2 seems to have integration techniques with REDCap also**.**
+
+**Authorisation Implementation:**
+OAuth 2.0
+Open ID Connect
+Smart on FHIR patterns
+JWT access tokens
+RBAC or ABAC
+
+for IDPs:
+Self hosted = keycloak
+else = Auth0, Azure or AWS services
+
 ---
 # Links and Help:
 
@@ -238,5 +272,9 @@ For any other extensions refer to the comprehensive FHIR Extension Registry: htt
 When defining a relationship between a patient and another person, (Eg: emergency contact) a code for their relationship is needed. This link shows all RoleCodes: https://terminology.hl7.org/6.5.0/ValueSet-v3-RoleCode.html
 
 ### Encoding Problems
-If you receive a code error when trying to run the code, maybe the feature you are trying to get is encoded. Features like gender, marital status and relationship are coded and require the ``toCode()``method.   
-The following is a link to the list of all encoded values in FHIR HL7: https://terminology.hl7.org/codesystems.html 
+If you receive a code error when trying to run the code, maybe the feature you are trying to get is encoded. Features like gender, marital status and relationship are coded and require the ``toCode()``method. The following is a link to the list of all encoded values in FHIR HL7: https://terminology.hl7.org/codesystems.html
+
+### Format Validation Tools
+The following are validation for certain data formats. I would suggest checking the input HL7 and the output Json (and vice versa) to see if the converter created valid outputs.
+**FHIR Json validator:** https://sandbox.hl7europe.eu/validator-form.html
+**HL7 Validator:** https://freeonlineformatter.com/hl7-validator/run
