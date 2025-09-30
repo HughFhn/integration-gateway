@@ -76,7 +76,6 @@ public class FhirController {
         String hl7Message = null;
         try {
             hl7Message = FhirToHl7Converter.convertFhirToPatient((Patient) resource);
-            System.out.println("Converted Fhir Json: " + hl7Message);
         } catch (Exception e) {
             System.out.println("FhirToHl7Converter failed");
             System.out.println(e);

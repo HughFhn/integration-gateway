@@ -1,3 +1,6 @@
+#== Start program (go to keycloak dir) ==
+bin/kc.sh start-dev
+
 #=== Get New Token ===
 $response = Invoke-RestMethod `
     -Uri 'http://localhost:8080/realms/FhirGateway/protocol/openid-connect/token' `
