@@ -1,0 +1,142 @@
+"name": "Get Keycloak Token",
+			"request": {
+				"auth": {
+					"type": "oauth2",
+					"oauth2": [
+						{
+							"key": "accessTokenUrl",
+							"value": "http://localhost:8080/realms/FhirGateway/protocol/openid-connect/token",
+							"type": "string"
+						},
+						{
+							"key": "addTokenTo",
+							"value": "header",
+							"type": "string"
+						},
+						{
+							"key": "scope",
+							"value": "openid profile email",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "",
+							"type": "string"
+						},
+						{
+							"key": "clientSecret",
+							"value": "",
+							"type": "string"
+						},
+						{
+							"key": "clientId",
+							"value": "",
+							"type": "string"
+						},
+						{
+							"key": "grant_type",
+							"value": "password_credentials",
+							"type": "string"
+						},
+						{
+							"key": "tokenName",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "fhir to hl7",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"resourceType\": \"Patient\",\r\n  \"id\": \"example\",\r\n  \"active\": true,\r\n  \"name\": [\r\n    {\r\n      \"use\": \"official\",\r\n      \"family\": \"Doe\",\r\n      \"given\": [\r\n        \"John\",\r\n        \"A.\"\r\n      ]\r\n    }\r\n  ],\r\n  \"gender\": \"male\",\r\n  \"birthDate\": \"1980-01-01\",\r\n  \"address\": [\r\n    {\r\n      \"use\": \"home\",\r\n      \"line\": [\r\n        \"123 Main St\"\r\n      ],\r\n      \"city\": \"Anytown\",\r\n      \"state\": \"CA\",\r\n      \"postalCode\": \"12345\",\r\n      \"country\": \"USA\"\r\n    }\r\n  ],\r\n  \"telecom\": [\r\n    {\r\n      \"system\": \"phone\",\r\n      \"value\": \"+1-555-555-5555\",\r\n      \"use\": \"home\"\r\n    }\r\n  ],\r\n  \"communication\": [\r\n    {\r\n      \"language\": {\r\n        \"coding\": [\r\n          {\r\n            \"system\": \"urn:ietf:bcp:47\",\r\n            \"code\": \"en\",\r\n            \"display\": \"English\"\r\n          }\r\n        ],\r\n        \"text\": \"English\"\r\n      },\r\n      \"preferred\": true\r\n    }\r\n  ],\r\n  \"maritalStatus\": {\r\n    \"coding\": [\r\n      {\r\n        \"system\": \"http://terminology.hl7.org/CodeSystem/v3-MaritalStatus\",\r\n        \"code\": \"M\",\r\n        \"display\": \"Married\"\r\n      }\r\n    ],\r\n    \"text\": \"Married\"\r\n  },\r\n  \"extension\": [\r\n    {\r\n      \"url\": \"http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName\",\r\n      \"valueString\": \"Smith\"\r\n    },\r\n    {\r\n      \"url\": \"http://hl7.org/fhir/StructureDefinition/patient-religion\",\r\n      \"valueCodeableConcept\": {\r\n        \"coding\": [\r\n          {\r\n            \"system\": \"http://terminology.hl7.org/CodeSystem/v3-ReligiousAffiliation\",\r\n            \"code\": \"1013\",\r\n            \"display\": \"Roman Catholic Church\"\r\n          }\r\n        ]\r\n      }\r\n    },\r\n    {\r\n      \"url\": \"http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity\",\r\n      \"extension\": [\r\n        {\r\n          \"url\": \"ombCategory\",\r\n          \"valueCoding\": {\r\n            \"code\": \"2135-2\",\r\n            \"display\": \"Hispanic or Latino\"\r\n          }\r\n        },\r\n        {\r\n          \"url\": \"Hispanic or Latino\",\r\n          \"valueString\": \"Hispanic or Latino\"\r\n        }\r\n      ]\r\n    }\r\n\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/fhir/convert/fhir-to-hl7",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"fhir",
+						"convert",
+						"fhir-to-hl7"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "hl7 to fhir",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "MSH|^~\\&|HIS|RIH|EKG|EKG|202509101430||ADT^A01|123456|P|2.6\r\nPID|1||12345^^^Hospital^MR||Doe^John^A|Coleman|20050401|M|||123 Barrack St^^Cork City^Co.Cork^P12AB34||+353897084816||Spanish|A|1041^Roman Catholic Church|123456789\r\nPV1|1|I|2000^2012^01||||004777^Smith^Adam|||||||||||V"
+				},
+				"url": {
+					"raw": "http://localhost:8081/fhir/convert/hl7-to-fhir",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"fhir",
+						"convert",
+						"hl7-to-fhir"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
