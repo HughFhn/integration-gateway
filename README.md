@@ -1,22 +1,19 @@
-# FHIR Gateway
+
 ---
 The following project is a FHIR Gateway. It retrieves data from a source in a certain format and when determining its destination it will transform the data as required. (Eg: HL7 -> FHIR Json)  
 In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly EPIC and other destinations in the future like the registry. The following is a document written to track the progress with the development of the foundation of transforming this data, common errors and problems encountered when making and using this application.
 
---- 
-
+---
 # The Following is the Stack of the Project.
-
-| Layer                 | Choice                | Version                 | Notes                                                                                       |
-|-----------------------|-----------------------|-------------------------|---------------------------------------------------------------------------------------------|
-| JDK                   | Temurin / Oracle Java | 21 LTS                  | Current LTS. Plan a test branch for Java 25 LTS after it drops in Sept 2025. (Oracle, Java) |
-| Application Framework | Spring Boot           | 3.5.5 current           | Aligns with Spring Framework 6.2.x production line. (Home, GitHub)                          |
-| Middle-ware Framework | Apache Camel          | 4.14.0 (LTS)             | If you want a slightly longer-tested LTS, 4.10.6 LTS is also available. (Apache Camel)      |
-| Build                 | Maven                 | 3.9.11                  | Latest general availability. (Apache Maven)                                                 |
-| FHIR SDK              | HAPI FHIR             | 8.x (R4/R4B/R5 support) | R4B supported since 6.2; current 8.x artifacts available. (hapifhir.io, Maven Repository)   |
-| IDP + Authenticator   | Keycloak              | 26.3.5                  | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |
-| TLS Library           | OpenSSL               | 3.0 (GA + LTS)            | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |
-
+| Layer                 | Choice                | Version                 | Notes                                                                                       |     |
+| --------------------- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------- | --- |
+| JDK                   | Temurin / Oracle Java | 21 LTS                  | Current LTS. Plan a test branch for Java 25 LTS after it drops in Sept 2025. (Oracle, Java) |     |
+| Application Framework | Spring Boot           | 3.5.5 current           | Aligns with Spring Framework 6.2.x production line. (Home, GitHub)                          |     |
+| Middle-ware Framework | Apache Camel          | 4.14.0 (LTS)            | If you want a slightly longer-tested LTS, 4.10.6 LTS is also available. (Apache Camel)      |     |
+| Build                 | Maven                 | 3.9.11                  | Latest general availability. (Apache Maven)                                                 |     |
+| FHIR SDK              | HAPI FHIR             | 8.x (R4/R4B/R5 support) | R4B supported since 6.2; current 8.x artifacts available. (hapifhir.io, Maven Repository)   |     |
+| IDP + Authenticator   | Keycloak              | 26.3.5                  | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |     |
+| TLS Library           | OpenSSL               | 3.0 (GA + LTS)          | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |     |
 
 ---
 # Current File Structure
@@ -49,15 +46,15 @@ In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly
 			    └── example
 					└── gateway
 						├── controller
-							└── FHIRController
+							└── FhirController
 						├── converter
-							├── FHIRToHl7Converter
-							└── Hl7ToFHIRConverter
+							├── FhirToHl7Converter
+							└── Hl7ToFhirConverter
 						├── maps
 							└── MapperService
 						├── routes
-							├── FHIRToHl7Route
-							└── Hl7ToFHIRRoute
+							├── FhirToHl7Route
+							└── Hl7ToFhirRoute
 						└── GatewayApplication
 		└── resources
 			└── Maps
@@ -69,31 +66,68 @@ In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly
 
 
 ---
+# FHIRGateway Process
+
+#### Initiation and Authorization:
+After the jar file is ran the apache camel service is initiated and is secured by Spring Security only allowing requests with a valid JWT issued by Keycloak ensuring only authorized personnel can access it. There is Role Based Access defined from Keycloak and only they are allowed to utilise the gateway.
+
+#### REST API:
+The REST API endpoints then open and there are two main operations. Patient endpoints to create, retrieve and list patients and data conversion, which is used to translate different data formats from one to the other.
+The post request to create or retrieve patient data is received and the gateway operates using the in memory patient database (located in ``FhirController.java`` and is subject to change.)
+
+For conversion it is sent to the certain conversion class depending on the endpoint.
+
+#### Storing Data:
+The gateway avoids data storage which will reflect the end product. (Audit log may be an exception)
+
+#### Returning Response:
+After, the gateway sends back a HTTP response of the received and converted data or an error message if true.
+
+#### Logging and Auditing:
+In this stage of development which is focused on ironing out issues and debugging, the gateway logs the last conversion and time of conversion which is useful for monitoring if a conversion method was successful or not even if it did not receive any errors.
+
+---
 # How to Use:
+
+### Prerequisites:
+- Make sure the appropriate software that is listed in the stack is installed.
+- Install Postman for easy HTTP requests.
 ### How to run HL7 to FHIR Json:
+
+In a shell, type the following to start up Keycloak. Make sure you are in the Keycloak/bin directory.
+Type the following to start up the development server:
+
+``` Powershell
+.\kc.sh start-dev
+```
+
+This should open another window with Keycloak logs.
+
+Now opening a new terminal in the dir of the FHIRGate project,
 In the terminal type the following to build the jar file:
 
-```  
+```  Powershell
 mvn clean package spring-boot:repackage  
 ```  
 
 Next type this to run the jar file:
 
-```  
+```  Powershell
 java -jar target/gateway-0.0.1-SNAPSHOT.jar  
 ```  
 
-- Then the server will start up and await a POST request to it.
-- Open another terminal. This will be used to send a POST request and simulate a client.
-- Navigate to the directory with the test file where the HL7 is located.
-- Next, invoke a web request by pasting the following in the terminal:
-```  
-Invoke-WebRequest -Uri http://localhost:8080/fhir/convert/hl7-to-fhir `  
->>   -Method POST `                                                                     >>   -ContentType "text/plain" `                                                        >>   -InFile "test.hl7" `  
-```  
+- Then the apache camel server will start up and await a POST request to it.
+
+- Open Postman and create a collection to get the JWT supplied by Keycloak. I have exported the collection I used into a Json file with credentials like keys, passwords and usernames removed. The Json can be found in the GitHub Repository.
+
+- After Postman is all setup, use the GET request to obtain the Keycloak Access Token by selecting "Get New Access Token" at the bottom of the Authentication tab (Make sure your Keycloak credentials are correct).
+
+- Check if the access token you recieved from the GET is the same as the token in the POST. If not copy and paste it over.
+
+- Next, invoke a POST by sending body to the URL in the config file.
 
 - Navigating back to the terminal with the gateway running, a result like the following should display:
-```  
+```
 Received HL7:  
 MSH|^~\&|HIS|RIH|EKG|EKG|202509101430||ADT^A01|123456|P|2.6  
 PID|1||12345^^^Hospital^MR||Doe^John^A|Coleman|19800101|M|||123 Main St^^Metropolis^NY^10001||555-1234|||S||123456789  
@@ -104,45 +138,42 @@ Conversion complete!
 Converted HL7: {"resourceType":"Patient","extension":[{"url":"http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName","valueString":"Coleman"}],"name":[{"family":"Doe","given":["John"]}],"gender":"male","birthDate":"1980-01-01"}  
 ```  
 
-The result is also stored in the ``test-fhir.json`` file. It displays the time and date the request was sent for auditing purposes.
+The time of conversion is written to the audit.log file in the output folder to see if the conversion was successful.
+
+***Congratulations you converted data formats!***
 
 ---
-### How to Convert:
+### How to Add Conversion Fields:
 
-***HL7 -> FHIR Json***  
-To add a new feature to convert  
-There should be a converter java file located in the ``src.main.java.com.example.gateway`` file path. 
-This file is where you specify the attributes in the patient object that you want to collect from the message. The convert function checks the type of message depending on what it detects in a simple switch case. 
-It then jumps to the actual convert function. Using HAPI Terser to parse the HL7 message and using the HL7 FHIR library to assign attributes to a patient object using the PID segments.  
-Some attributes need an object of their own such as ContactPoint and others which are not native to FHIR require an extension on their decleration (This is shown later). 
-The file then moves on to the Apache Camel Route so the program will know how the message flows through the system.
+(*The following was written while converting the PID and MSH of HL7 messages. Other headers may vary*)
 
-Basic HL7 Message overview:  
-MSH|...         (Message Header)  
-EVN|...          (Event Type)  
-PID|...           (Patient Identification) ** IMPORTANT INFORMATION **  
-NK1|...          (Next of Kin – optional, repeatable)  
-NK1|...          (Additional next of kin if present)  
+***HL7 -> FHIR Json***
+To add a new feature to convert
+There should be a converter java file located in the ``src.main.java.com.example.gateway`` file path. This file is where you specify the attributes in the patient object that you want to collect from the message. The convert function checks the type of message depending on what it detects in a simple switch case. It then jumps to the actual convert function. Using HAPI Terser to parse the HL7 message and using the HL7 FHIR library to assign attributes to a patient object using the PID segments. Some attributes need an object of their own such as ContactPoint and others which are not native to FHIR require an extension on their decleration (This is shown later). The file then moves on to the Apache Camel Route so the program will know how the message flows through the system.
+
+Basic HL7 Message overview:
+MSH|...         (Message Header)
+EVN|...          (Event Type)
+PID|...           (Patient Identification) <- This is what is done so far
+NK1|...          (Next of Kin – optional, repeatable)
+NK1|...          (Additional next of kin if present)
 PV1|...          (Patient Visit)
 
 ---
-***FHIR Json -> HL7***  
-To add a new feature to convert  
-There should be a converter java file located in the `src.main.java.com.example.gateway` file path similar to converting HL7 to FHIR Json. The converter function starts with creating a message object. You must specify the message code, trigger event and processing ID such as ADT, A01, P.
-Then you must start mapping features from the Json to the HL7 format.  
-Knowledge or a cheat sheet of the HL7 format is required to correctly map the features to the correct section.
-Here is a link to some helpful links later in the page: [Link to Section Documentation](#section_id)
 
-When mapping to HL7 PIDs, most features require a certain type object to be created. This object is used to get from the Json and is then used in the ``.setValue()`` method. Any deviations to this formula is listed below under the **Problems Encountered** section. 
-Extension implementation is similar to the other conversion of HL7 to FHIR Json.  
-The file then moves on to the Apache Camel Route so the program will know how the message flows through the system.
+***FHIR Json -> HL7***
+To add a new feature to convert
+There should be a converter java file located in the `src.main.java.com.example.gateway` file path similar to converting HL7 to FHIR Json. The converter function starts with creating a message object. You must specify the message code, trigger event and processing ID such as ADT, A01, P. These are all found in the Message Header (first line) of HL7 messages.
+Then you must start mapping features from the Json to the HL7 format. Knowledge or a cheat sheet of the HL7 format is required to correctly map the features to the correct section. Here is a link to the HL7 format: [Link to Section Documentation](#section_id)
+When mapping to HL7 fields, most features require a certain type object to be created. This object is used to get from the Json and is then used in the ``.setValue()`` method. Any deviations to this formula is listed below under the **Problems Encountered** section. Extension implementation is similar to the other conversion of HL7 to FHIR Json.  The file then moves on to the Apache Camel Route so the program will know how the message flows through the system.
 
 ---
 ### Overview
-My one observation between the two conversions is that FHIR Json to HL7 is much more verbose and complicated. The terser and hl7 fhir libraries are very simple and easy to use. When writing it flows much better. This maybe due to the fact that HL7 is more complex so formatting is more difficult or that it is a legacy format so moving away from it should be simple.
+My one observation between the two conversions is that FHIR Json to HL7 is much more verbose and complicated. The terser and HL7 FHIR libraries are very simple and easy to use. When writing it flows much better. This maybe due to the fact that HL7 is more complex so formatting is more difficult or that it is a legacy format so moving away from it should be simple.
 
 ---
 # Authorization
+
 Authorization is handled by Keycloak, an opensource authorization, Identity Provider (IdP) and authentication application which supports features like single sign on and role based access control. Access management is crucial for a project like this as it handles transfers of patients personal/ medical data. This is why protocols like OpenID, OAuth 2.0 and SAML are features present in Keycloak.
 For testing Keycloak, Postman was used to simulate POST and GET requests. Docker also ensures that the application is stable across most systems and any glaring issues would be found in that.
 The first bean in ``SecurityConfig.java`` is used as a filter. It disables cross site request forgery for potential attacks and then defines the endpoints that different roles are able to access.
@@ -172,7 +203,6 @@ addExtension()
 
 Links to helpful resources:
 Defining extensions, sub-extensions and retrieving values from extensions: https://hapifhir.iso/hapi-fhir/docs/model/profiles_and_extensions.html#profiles-and-extensions
-
 <a id="section_id"></a>
 List of PID and there corresponding value and if they require extensions: https://build.fhir.org/ig/HL7/v2-to-fhir/ConceptMap-segment-pid-to-patient.html
 This Should be your bible when converting PID to Patient Map. Data types, links, and objects are specified per PID with additional notes available.
@@ -186,12 +216,15 @@ When requesting an access token in Postman for testing the Keycloak authenticati
 
 When adding information to the `Patient` object, for adding X there is usually a ``.setX`` method but some of these take only the types of what they are setting. For example, if setting an address, you would use ``.setAddress(*Address goes here*)`` but that address you are adding must be an address object. When creating an Address object there are methods to set streets, city, etc.
 
-### Status Codes:
-**404 - Not Found:** If you recieve this error the problem is most likely due to the route or PostMapping in your Controller file. This means that the endpoint could not be located.
+### Status Codes Commonly Encountered:
+
+**401 - Unauthorized:** If you get this status code then you are unauthorized to perform a certain action. In most cases the wrong access token or access role is used. Double check in Postman that the access token in the GET and POST methods are the same.
+
+**404 - Not Found:** If you receive this error the problem is most likely due to the route or PostMapping in your Controller file or in your Postman, using the wrong URL. This means that the endpoint could not be located.
 
 **500 - Internal Server Error:** This is a generic HTTP code but in my experience with FHIR Gate, I have found it to be an issue with the code that is not picked up by the IDE. Check spellings, route in the http and check the input (Dont try to convert a HL7 when it is looking for a Json).
 
-**200 - Ok:** This code means that the request was successful so if you are still encountering a problem it is not something to do with the POST or GET requests, routing or input.
+**200 - Ok:** This code means that the request was successful so if you are still encountering a problem it is not something to do with the POST or GET requests, routing or input. Most likely to due with the converters.
 
 
 ---
@@ -209,9 +242,9 @@ https://build.fhir.org/security.html
 * Using FHIR's security labels and read access to grant or prevent certain people access to reading some confidential information.
     * Implementing a break the glass feature for restricted data so in an emergency context someone like a clinician can view the information to help the patient.
 * Check DoS and over flooding the queries and prevent it from happening. And Json injection. Done with Spring Security filters or API limits.
-* Users must protect their token if leaving device unattended.
+* Users must protect their token if leaving device unattended. (Token Timeout?)
 * Verify HL7 and FHIR messages and ignore or reject unknown forms of messages.
-* Log suspicious activities. Use token introspection for this*
+* Log suspicious activities. *Use token introspection for this*
 * Store client secrets, tokens and API keys on a server-side vault in case of needed retrieval.
 * The AuditEvent is a record that logs who did what, when and why in a healthcare system.
   *AuditEvent* by FHIR read more: https://build.fhir.org/auditevent.html
@@ -221,9 +254,6 @@ https://build.fhir.org/security.html
 Best practices:
 Link: https://docs.smarthealthit.org/authorization/best-practices/
 - Authentication codes, client credentials and other sensitive information should be conducted over links that have been secured using TLS.
-- OAuth Grant Models:
-    - RFC 6749  - Enables authentication server to share directly to end users not exposing to user agents like browsers. Requires user implements CSRF (Cross-Site Request Forgery) protection.
-    - If the transmitting of a Json Web Token is required then RFC7523 is recommended.
 - Refresh tokens should have a significantly longer lifetime than access tokens.
 - Refresh tokens are good as they reduce the risk of unwanted access.
 - Client Credential flow OAuth2. (Good for FHIR Gateway -> REDCap/ DHIS2)
@@ -231,14 +261,14 @@ Link: https://docs.smarthealthit.org/authorization/best-practices/
 - Implementing a third party Multi-Factor Authentication tool like Google Authenticator/ Authy/ Microsoft Authenticator.
 ## Implementation:
 * Using the available Hl7 to FHIR would simplify the process. It is open source so modifications can be applied if needed.  
-*(GitRepo to FHIR to Hl7V2 converter: https://github.com/CDCgov/prime-fhir-converter?tab=readme-ov-file )*
-* Hl7 to FHIR is currently implemented. 
+  *(GitRepo to FHIR to Hl7V2 converter: https://github.com/CDCgov/prime-fhir-converter?tab=readme-ov-file )*
+* Hl7 to FHIR is currently implemented.
 * Server needed to audit and authenticate GET and POST requests.
 * The following link is Implementation considerations from there HL7 to FHIR website: https://build.fhir.org/ig/HL7/v2-to-fhir/implementation_considerations.html
 * Here is a Java REDCap API Library on GitHub as Java is not natively supported: https://github.com/altierifIOV/REDCapAPILibrary/tree/main
   *Python is if implementation on that is required and Java is too difficult*
 * DHIS2 supports transformation to FHIR: https://dhis2.org/integration/fhir/
-  *Includes video in which they show code of conversion from DHIS2 to fhir*
+  *Includes video in which they show code of conversion from DHIS2 to FHIR*
 * DHIS2 -> FHIR repo: https://github.com/dhis2/integration-examples/tree/main/dhis2-to-fhir-bundle *important can be implemented*
 * DHIS2 seems to have integration techniques with REDCap also**.**
 
@@ -276,5 +306,5 @@ If you receive a code error when trying to run the code, maybe the feature you a
 
 ### Format Validation Tools
 The following are validation for certain data formats. I would suggest checking the input HL7 and the output Json (and vice versa) to see if the converter created valid outputs.
-**FHIR Json validator:** https://sandbox.hl7europe.eu/validator-form.html
+**FHIR Json validator:** https://validator.fhir.org/
 **HL7 Validator:** https://freeonlineformatter.com/hl7-validator/run
