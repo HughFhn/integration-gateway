@@ -9,20 +9,38 @@ import org.springframework.http.ResponseEntity;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.fhir.context.FhirContext;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 
 import java.util.Date;
-
-import static org.apache.camel.component.xslt.XsltOutput.file;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/fhir")
 public class FhirController {
 
     private final FhirContext fhirContext = FhirContext.forR4();
+    private Map<String, Patient> patientDatabase = new HashMap<>(); // In-memory storage for patients
+
+    // Retrieve a specific patient by ID
+    @GetMapping("/patient/{id}")
+    public ResponseEntity<Patient> getPatient(@PathVariable String id) {
+        Patient patient = patientDatabase.get(id);
+        if (patient == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(patient);
+    }
+
+    // Create a new patient
+    @PostMapping("/patient")
+    public ResponseEntity<Patient> createPatient(@RequestBody Patient patient) {
+        String patientId = String.valueOf(patientDatabase.size() + 1);
+        patient.setId(patientId);
+        patientDatabase.put(patientId, patient);
+        return ResponseEntity.status(201).body(patient);
+    }
     String auditPath = "output/audit.log";
 
     // Convert Hl7 to Fhir Json
@@ -62,6 +80,7 @@ public class FhirController {
 
         return ResponseEntity.ok(fhirJson);
     }
+
     // Convert Fhir Json -> Hl7
     @PostMapping("/convert/fhir-to-hl7")
     public ResponseEntity<String> convertFhirToHl7(@RequestBody String fhirJson) throws Exception {
@@ -78,7 +97,8 @@ public class FhirController {
             hl7Message = FhirToHl7Converter.convertFhirToPatient((Patient) resource);
         } catch (Exception e) {
             System.out.println("FhirToHl7Converter failed");
-            System.out.println(e);
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Conversion failed: " + e.getMessage());
         }
 
         String outputPath = "output/test-hl7.hl7";
