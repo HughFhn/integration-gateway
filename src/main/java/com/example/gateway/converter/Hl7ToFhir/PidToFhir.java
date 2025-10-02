@@ -1,4 +1,4 @@
-package com.example.gateway.converter.hl7Converter;
+package com.example.gateway.converter.Hl7ToFhir;
 
 import com.example.gateway.converter.Hl7ToFhirConverter;
 import com.example.gateway.maps.MapperService;

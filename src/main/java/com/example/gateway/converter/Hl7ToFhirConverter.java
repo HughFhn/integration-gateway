@@ -3,8 +3,8 @@ package com.example.gateway.converter;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.util.Terser;
 
-import com.example.gateway.converter.hl7Converter.MshToFhir;
-import com.example.gateway.converter.hl7Converter.PidToFhir;
+import com.example.gateway.converter.Hl7ToFhir.MshToFhir;
+import com.example.gateway.converter.Hl7ToFhir.PidToFhir;
 import com.example.gateway.maps.MapperService;
 import org.hl7.fhir.r4.model.*;
 import ca.uhn.fhir.context.FhirContext;
