@@ -3,6 +3,7 @@ package com.example.gateway.controller;
 import com.example.gateway.converter.FhirToHl7Converter;
 import com.example.gateway.converter.Hl7ToFhirConverter;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Bundle;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
@@ -87,14 +88,31 @@ public class FhirController {
         System.out.println("\nReceived Fhir Json:\n" + fhirJson); // Debug print
 
         var resource = fhirContext.newJsonParser().parseResource(fhirJson);
-        // Confirm that its just Patient and admission so far
-        if (!(resource instanceof Patient)) {
-            throw new IllegalArgumentException("Only Patient resource supported for now.\nMust implement others if needed");
+        Patient patient = null;
+
+        // Loop and if to see if patient is present either inside bundle or as a raw text
+        if (resource instanceof Patient) {
+            // Raw Patient resource
+            patient = (Patient) resource;
+        } else if (resource instanceof Bundle) {
+            // Bundle with Patient inside
+            Bundle bundle = (Bundle) resource;
+            for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+                if (entry.getResource() instanceof Patient) {
+                    patient = (Patient) entry.getResource();
+                    break;
+                }
+            }
         }
-        // Try conversion, if not print stack trace
-        String hl7Message = null;
+
+        if (patient == null) {
+            throw new IllegalArgumentException("FHIR input must be either a Patient resource or a Bundle containing a Patient");
+        }
+
+        // Convert Patient -> HL7
+        String hl7Message;
         try {
-            hl7Message = FhirToHl7Converter.convertFhirToPatient((Patient) resource);
+            hl7Message = FhirToHl7Converter.convertFhirToPatient(patient);
         } catch (Exception e) {
             System.out.println("FhirToHl7Converter failed");
             e.printStackTrace();
