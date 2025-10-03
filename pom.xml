@@ -52,6 +52,31 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- JWT Libraries -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Camel Spring Boot Starter -->
         <dependency>
             <groupId>org.apache.camel.springboot</groupId>
@@ -78,6 +103,36 @@
             <groupId>org.apache.camel.springboot</groupId>
             <artifactId>camel-hl7-starter</artifactId>
             <version>${camel.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ca.uhn.hapi</groupId>
+                    <artifactId>hapi-base</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ca.uhn.hapi</groupId>
+                    <artifactId>hapi-structures-v21</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ca.uhn.hapi</groupId>
+                    <artifactId>hapi-structures-v22</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ca.uhn.hapi</groupId>
+                    <artifactId>hapi-structures-v23</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ca.uhn.hapi</groupId>
+                    <artifactId>hapi-structures-v24</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ca.uhn.hapi</groupId>
+                    <artifactId>hapi-structures-v25</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ca.uhn.hapi</groupId>
+                    <artifactId>hapi-structures-v26</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Camel HTTP Component -->
@@ -112,14 +167,14 @@
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-base</artifactId>
-            <version>2.6.0</version>
+            <version>2.3</version>
         </dependency>
 
         <!-- HAPI HL7 Structures v2.6 -->
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v26</artifactId>
-            <version>2.6.0</version>
+            <version>2.3</version>
         </dependency>
 
         <!-- HAPI FHIR Core Library -->
@@ -134,6 +189,10 @@
             <groupId>ca.uhn.hapi.fhir</groupId>
             <artifactId>hapi-fhir-structures-r4</artifactId>
             <version>8.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
     </dependencies>
 
