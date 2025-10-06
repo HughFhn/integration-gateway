@@ -5,6 +5,7 @@ import com.example.gateway.converter.FhirToHl7Converter;
 import com.example.gateway.converter.Hl7ToFhirConverter;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.hl7v2.model.Message;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
@@ -89,7 +90,37 @@ public class FhirController {
 
         try {
             var resource = fhirContext.newJsonParser().parseResource(fhirJson);
-            Patient patient = null;
+            Patient patient = getPatient(resource);
+
+            // Perform conversion
+            String hl7Message = FhirToHl7Converter.convertFhirToPatient(patient);
+
+        String outputPath = "output/test-hl7.hl7";
+        // Date object for audit log
+        Date dateNow = new Date();
+
+        // Write conversion output
+        try (FileWriter fw = new FileWriter(outputPath)) {
+            fw.write(hl7Message);
+        }
+
+        // Write audit log (append mode so you don’t overwrite)
+        try (FileWriter auditWrite = new FileWriter(auditPath, true)) {
+            auditWrite.write("FHIR→HL7 conversion performed at " + dateNow + "\n");
+        }
+
+            log.info("Conversion complete! HL7 message saved.");
+            return ResponseEntity.ok(hl7Message);
+
+        } catch (Exception e) {
+            log.error("Failed to convert FHIR to HL7: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\":\"Conversion failed: " + e.getMessage() + "\"}");
+        }
+    }
+
+    private static Patient getPatient(IBaseResource resource) {
+        Patient patient = null;
 
         // Loop and if to see if patient is present either inside bundle or as a raw text
         if (resource instanceof Patient) {
@@ -108,31 +139,6 @@ public class FhirController {
         if (patient == null) {
             throw new IllegalArgumentException("FHIR input must be either a Patient resource or a Bundle containing a Patient");
         }
-
-            // Perform conversion
-            String hl7Message = FhirToHl7Converter.convertFhirToPatient(patient);
-
-        String outputPath = "output/test-hl7.hl7";
-        // Date object for audit log
-        Date dateNow = new Date();
-
-        // Write conversion output
-        try (FileWriter fw = new FileWriter(outputPath)) {
-            fw.write(hl7Message);
-        }
-
-        // Write audit log (append mode so you don’t overwrite)
-        try (FileWriter auditWrite = new FileWriter(auditPath, true)) {
-            auditWrite.write("\nConversion performed at " + dateNow + "\n");
-        }
-
-            log.info("Conversion complete! HL7 message saved.");
-            return ResponseEntity.ok(hl7Message);
-
-        } catch (Exception e) {
-            log.error("Failed to convert FHIR to HL7: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"error\":\"Conversion failed: " + e.getMessage() + "\"}");
-        }
+        return patient;
     }
 }
