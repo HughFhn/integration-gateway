@@ -45,6 +45,7 @@ public class DetailsService implements UserDetailsService {
         return new User(username, password, authorities);
     }
 
+    // Add a new user (Use later?)
     public void addUser(String username, String rawPassword) {
         users.put(username, passwordEncoder.encode(rawPassword));
     }

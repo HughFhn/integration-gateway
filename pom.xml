@@ -108,10 +108,6 @@
         <!-- HL7 Message Versions -->
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
-            <artifactId>hapi-base</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ca.uhn.hapi</groupId>
             <artifactId>hapi-structures-v21</artifactId>
             <version>2.3</version>
         </dependency>
@@ -177,13 +173,6 @@
             <version>2.3</version>
         </dependency>
 
-        <!-- HAPI HL7 Structures v2.6 -->
-        <dependency>
-            <groupId>ca.uhn.hapi</groupId>
-            <artifactId>hapi-structures-v26</artifactId>
-            <version>2.3</version>
-        </dependency>
-
         <!-- HAPI FHIR Core Library -->
         <dependency>
             <groupId>ca.uhn.hapi.fhir</groupId>
@@ -196,10 +185,6 @@
             <groupId>ca.uhn.hapi.fhir</groupId>
             <artifactId>hapi-fhir-structures-r4</artifactId>
             <version>8.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
     </dependencies>
 

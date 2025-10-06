@@ -5,7 +5,6 @@ import com.example.gateway.converter.FhirToHl7Converter;
 import com.example.gateway.converter.Hl7ToFhirConverter;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.parser.PipeParser;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.slf4j.Logger;
@@ -50,7 +49,7 @@ public class FhirController {
 
     // Convert Hl7 to Fhir Json
     @PostMapping("/convert/hl7-to-fhir")
-    public ResponseEntity<String> convertHl7ToFhir(@RequestBody String hl7) throws Exception {
+    public ResponseEntity<String> convertHl7ToFhir(@RequestBody String hl7) {
         System.out.println("\nReceived HL7:\n" + hl7); // Debug print
 
         try {
@@ -85,7 +84,7 @@ public class FhirController {
 
     // Convert Fhir Json -> Hl7
     @PostMapping("/convert/fhir-to-hl7")
-    public ResponseEntity<String> convertFhirToHl7(@RequestBody String fhirJson) throws Exception {
+    public ResponseEntity<String> convertFhirToHl7(@RequestBody String fhirJson) {
         System.out.println("\nReceived Fhir Json:\n" + fhirJson); // Debug print
 
         try {
@@ -96,9 +95,8 @@ public class FhirController {
         if (resource instanceof Patient) {
             // Raw Patient resource
             patient = (Patient) resource;
-        } else if (resource instanceof Bundle) {
+        } else if (resource instanceof Bundle bundle) {
             // Bundle with Patient inside
-            Bundle bundle = (Bundle) resource;
             for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
                 if (entry.getResource() instanceof Patient) {
                     patient = (Patient) entry.getResource();
