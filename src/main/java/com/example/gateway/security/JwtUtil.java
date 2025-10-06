@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,10 +17,40 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
+
     private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
     @Value("${jwt.expiration:86400}")
     private long expiration;
+
+    public String extractUserName(String token) {
+        try {
+            // Log token details before parsing
+            logger.info("Token to Extract Username: {}", token);
+            logger.info("Token Period Count: {}", token.chars().filter(chars -> chars == '.').count());
+
+            // Detailed parsing
+            Claims claims = Jwts.parser()
+                    .setSigningKey(SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            return claims.getSubject();
+        } catch (Exception e) {
+            // Log full exception details
+            logger.error("Username Extraction Error", e);
+
+            // Log token parts for debugging
+            String[] parts = token.split("\\.");
+            for (int i = 0; i < parts.length; i++) {
+                logger.info("Token Part {}: {}", i, parts[i]);
+            }
+
+            throw new RuntimeException("Token parsing failed: " + e.getMessage(), e);
+        }
+    }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
@@ -31,10 +63,6 @@ public class JwtUtil {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-    }
-
-    public String extractUserName(String token) {
-        return extractClaim(token, Claims::getSubject);
     }
 
     public Date extractExpiration(String token) {
@@ -61,8 +89,18 @@ public class JwtUtil {
     }
 
     public boolean validateToken(String token, String userName) {
-        final String extractedUserName = extractUserName(token);
-        return extractedUserName.equals(userName) && !isTokenExpired(token);
+        try {
+            // Add detailed logging
+            System.out.println("Token to validate: " + token);
+            System.out.println("Token length: " + token.split("\\.").length);
+
+            final String extractedUserName = extractUserName(token);
+            return extractedUserName.equals(userName) && !isTokenExpired(token);
+        } catch (Exception e) {
+            // Log full stack trace for comprehensive debugging
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

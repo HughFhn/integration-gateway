@@ -7,12 +7,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -26,42 +30,44 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthRequest authRequest) {
         try {
-            authenticationManager.authenticate(
+            // Authenticate
+            Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            authRequest.getUsername(),
-                            authRequest.getPassword()
+                            authRequest.username,  // Direct field access
+                            authRequest.password   // Direct field access
                     )
             );
+
+            // Get user details
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.username);
+
+            // Generate token
+            final String jwt = jwtUtil.generateToken(userDetails.getUsername());
+
+            // Log additional details
+            logger.info("Authentication successful for user: {}", authRequest.username);
+            logger.info("Generated JWT Token: {}", jwt);
+
+            return ResponseEntity.ok(new AuthResponse("success", jwt));
         } catch (BadCredentialsException e) {
+            logger.error("Authentication failed for user: {}", authRequest.username);
             return ResponseEntity.status(401).body(new AuthResponse("error", "Invalid username or password"));
         }
-
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
-        final String jwt = jwtUtil.generateToken(userDetails.getUsername());
-
-        return ResponseEntity.ok(new AuthResponse("success", jwt));
     }
 
+    // Static inner classes with public fields instead of getter/setter methods
     public static class AuthRequest {
-        private String username;
-        private String password;
-
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+        public String username;
+        public String password;
     }
 
     public static class AuthResponse {
-        private String status;
-        private String token;
+        public String status;
+        public String token;
 
         public AuthResponse(String status, String token) {
             this.status = status;
             this.token = token;
         }
-
-        public String getStatus() { return status; }
-        public String getToken() { return token; }
     }
 }
