@@ -1,5 +1,7 @@
 package com.example.gateway.security;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -28,7 +30,19 @@ public class DetailsService implements UserDetailsService {
         if (password == null) {
             throw new UsernameNotFoundException("User not found: " + username);
         }
-        return new User(username, password, new ArrayList<>());
+
+        // Assign roles
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        if ("admin".equals(username)) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        } else if ("converter".equals(username)) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_CONVERTER"));
+        } else {
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        }
+
+        // Return the user with roles attached
+        return new User(username, password, authorities);
     }
 
     public void addUser(String username, String rawPassword) {

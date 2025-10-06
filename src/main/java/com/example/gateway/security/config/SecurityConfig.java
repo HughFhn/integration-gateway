@@ -1,5 +1,6 @@
-package com.example.gateway.security;
+package com.example.gateway.security.config;
 
+import com.example.gateway.security.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,7 @@ public class SecurityConfig {
                 // Authorization rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/fhir/convert/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
 
