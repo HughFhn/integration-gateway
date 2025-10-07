@@ -1,5 +1,7 @@
 package com.example.gateway.token;
 
+import com.example.gateway.utils.SslUtil;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -10,8 +12,8 @@ import java.nio.file.Path;
 public class Convert {
 
     // URLs for conversion
-    private static final String FhirToHl7 = "http://localhost:8081/fhir/convert/fhir-to-hl7";
-    private static final String Hl7ToFhir = "http://localhost:8081/fhir/convert/hl7-to-fhir";
+    private static final String FhirToHl7 = "https://localhost:8081/fhir/convert/fhir-to-hl7";
+    private static final String Hl7ToFhir = "https://localhost:8081/fhir/convert/hl7-to-fhir";
 
     // Files containing input for formats
     private static String FhirInput;
@@ -83,7 +85,10 @@ public class Convert {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
+
+        SslUtil.disableCertificateValidation(); // Trusts any no matter the cert/address
+                                                // *ONLY FOR TESTING REMOVE FOR REAL DEPLOY*
 
         // Get token then use to post HL7 request
         System.out.println("=".repeat(20));

@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 
 public class RequestToken {
 
-    private static final String LOGIN_URL = "http://localhost:8081/auth/login";
+    private static final String LOGIN_URL = "https://localhost:8081/auth/login";
     private static final String USERNAME = "admin";
     private static final String PASSWORD = "password";
     private static final String TOKEN_FILE = "output/token.txt";

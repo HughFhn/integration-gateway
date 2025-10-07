@@ -1,6 +1,6 @@
 package com.example.gateway.controller;
 
-import com.example.gateway.Hl7ParserUtil;
+import com.example.gateway.utils.Hl7ParserUtil;
 import com.example.gateway.converter.FhirToHl7Converter;
 import com.example.gateway.converter.Hl7ToFhirConverter;
 import ca.uhn.fhir.context.FhirContext;
