@@ -1,4 +1,4 @@
-package com.example.gateway;
+package com.example.gateway.utils;
 
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.parser.DefaultModelClassFactory;
