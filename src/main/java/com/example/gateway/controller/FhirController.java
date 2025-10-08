@@ -103,6 +103,7 @@ public class FhirController {
         log.info("Broadcast sent to {} active clients", emitters.size());
         // Remove all disconnected emitters to avoid future errors
         emitters.removeAll(deadEmitters);
+
     }
 
     // Create a new patient
@@ -140,9 +141,19 @@ public class FhirController {
             // Send success request to website
             broadcastAudit(new Date(),"HL7 -> Fhir", "Success", "ADMIN");
 
+            // record conversion success
+            recordConversion(true);
+
             log.info("Conversion complete! FHIR JSON output saved.");
             return ResponseEntity.ok(fhirJson);
         } catch (Exception e) {
+
+            // Send failure request to website
+            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN");
+
+            // record conversion success
+            recordConversion(false);
+
             log.error("Failed to convert HL7 to FHIR: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("{\"error\":\"Failed to parse HL7: " + e.getMessage() + "\"}");
@@ -178,10 +189,19 @@ public class FhirController {
             // Send this to website
             broadcastAudit(new Date(),"Fhir -> HL7", "Success", "ADMIN");
 
+            // record conversion success
+            recordConversion(true);
             log.info("Conversion complete! HL7 message saved.");
             return ResponseEntity.ok(hl7Message);
 
         } catch (Exception e) {
+
+            // Send success request to website
+            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN");
+
+            // record conversion success
+            recordConversion(false);
+
             log.error("Failed to convert FHIR to HL7: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("{\"error\":\"Conversion failed: " + e.getMessage() + "\"}");
