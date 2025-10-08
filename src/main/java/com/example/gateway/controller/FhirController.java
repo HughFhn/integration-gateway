@@ -1,10 +1,17 @@
 package com.example.gateway.controller;
 
-import com.example.gateway.utils.Hl7ParserUtil;
-import com.example.gateway.converter.FhirToHl7Converter;
-import com.example.gateway.converter.Hl7ToFhirConverter;
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.hl7v2.model.Message;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
@@ -12,22 +19,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import com.example.gateway.converter.FhirToHl7Converter;
+import com.example.gateway.converter.Hl7ToFhirConverter;
+import com.example.gateway.utils.Hl7ParserUtil;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.hl7v2.model.Message;
+
+import static org.apache.jena.vocabulary.SchemaDO.event;
 
 @RestController
 @RequestMapping("/fhir")
+@CrossOrigin(origins = "http://localhost:3000") // allow React dev server
 public class FhirController {
 
     private static final Logger log = LoggerFactory.getLogger(FhirController.class);
+    private final List<SseEmitter>  emitters = new CopyOnWriteArrayList<>();
 
     private final FhirContext fhirContext = FhirContext.forR4();
     private final Map<String, Patient> patientDatabase = new HashMap<>();
+
+    private int totalConversions = 0;
+    private int successCount = 0;
+
+    public FhirController() {
+    }
 
     @GetMapping("/patient/{id}")
     public ResponseEntity<Patient> getPatient(@PathVariable String id) {
@@ -36,6 +54,55 @@ public class FhirController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(patient);
+    }
+
+    @GetMapping("audit/stream")
+    public SseEmitter getAuditStream() {
+        SseEmitter emitter = new SseEmitter(0L);
+        emitters.add(emitter);
+
+        emitter.onTimeout(() -> {
+                log.info("SSE emitter timed out");
+                emitters.remove(emitter);
+        });
+        emitter.onCompletion(() -> {
+            emitters.remove(emitter);
+            log.info("SSE emitter completed");
+        });
+        emitter.onError(e -> log.warn("SSE error: {}", e.getMessage()));
+
+        return emitter;
+    }
+
+    public void broadcastAudit(Date date, String type, String status, String user) {
+        Map<String, String> broadcastMap = Map.of(
+                "Date", String.valueOf(date),
+                "Type", type,
+                "Status", status,
+                "User", user
+        );
+
+        List<SseEmitter> deadEmitters = new ArrayList<>();
+
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("audit")
+                        .data(broadcastMap)); // include actual data in the event
+            } catch (IOException e) {
+                log.warn("Client disconnected while sending SSE event: {}", e.getMessage());
+                emitter.complete();
+                deadEmitters.add(emitter); // mark for cleanup
+            } catch (Exception e) {
+                log.error("Unexpected SSE error: {}", e.getMessage());
+                emitter.completeWithError(e);
+                deadEmitters.add(emitter);
+            }
+        }
+        // Debug log
+        log.info("Broadcast sent to {} active clients", emitters.size());
+        // Remove all disconnected emitters to avoid future errors
+        emitters.removeAll(deadEmitters);
     }
 
     // Create a new patient
@@ -56,10 +123,8 @@ public class FhirController {
         try {
             // Use Hl7 util to parse message
             Message message = Hl7ParserUtil.parseHL7(hl7);
-
             // now safely convert to FHIR
             String fhirJson = Hl7ToFhirConverter.convert(message, fhirContext, message.getName());
-
             // Create directory if missing
             new File("output").mkdirs();
 
@@ -72,11 +137,12 @@ public class FhirController {
             try (FileWriter auditWriter = new FileWriter(auditPath, true)) {
                 auditWriter.write("HL7→FHIR conversion performed at " + new Date() + "\n");
             }
+            // Send success request to website
+            broadcastAudit(new Date(),"HL7 -> Fhir", "Success", "ADMIN");
 
             log.info("Conversion complete! FHIR JSON output saved.");
             return ResponseEntity.ok(fhirJson);
-        }
-         catch (Exception e) {
+        } catch (Exception e) {
             log.error("Failed to convert HL7 to FHIR: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("{\"error\":\"Failed to parse HL7: " + e.getMessage() + "\"}");
@@ -91,23 +157,26 @@ public class FhirController {
         try {
             var resource = fhirContext.newJsonParser().parseResource(fhirJson);
             Patient patient = getPatient(resource);
-
+ 
             // Perform conversion
             String hl7Message = FhirToHl7Converter.convertFhirToPatient(patient);
 
-        String outputPath = "output/test-hl7.hl7";
-        // Date object for audit log
-        Date dateNow = new Date();
+            String outputPath = "output/test-hl7.hl7";
+            // Date object for audit log
+            Date dateNow = new Date();
 
-        // Write conversion output
-        try (FileWriter fw = new FileWriter(outputPath)) {
-            fw.write(hl7Message);
-        }
+            // Write conversion output
+            try (FileWriter fw = new FileWriter(outputPath)) {
+                fw.write(hl7Message);
+            }
 
-        // Write audit log (append mode so you don’t overwrite)
-        try (FileWriter auditWrite = new FileWriter(auditPath, true)) {
-            auditWrite.write("FHIR→HL7 conversion performed at " + dateNow + "\n");
-        }
+            // Write audit log (append mode so you don’t overwrite)
+            try (FileWriter auditWrite = new FileWriter(auditPath, true)) {
+                auditWrite.write("FHIR→HL7 conversion performed at " + dateNow + "\n");
+            }
+
+            // Send this to website
+            broadcastAudit(new Date(),"Fhir -> HL7", "Success", "ADMIN");
 
             log.info("Conversion complete! HL7 message saved.");
             return ResponseEntity.ok(hl7Message);
@@ -117,6 +186,36 @@ public class FhirController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("{\"error\":\"Conversion failed: " + e.getMessage() + "\"}");
         }
+    }
+
+    private synchronized void recordConversion(boolean success) {
+        totalConversions++;
+        if (success) successCount++;
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        double successRate = totalConversions == 0 ? 0 : (successCount * 100.0 / totalConversions);
+        Map<String, Object> stats = Map.of(
+                "totalConversions", totalConversions,
+                "successRate", successRate,
+                "avgLatency", 120 // placeholder
+        );
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/audit/recent")
+    public ResponseEntity<List<Map<String, String>>> getRecentAudits() {
+        List<Map<String, String>> logs = new ArrayList<>();
+
+        Map<String, String> log1 = new HashMap<>();
+        log1.put("type", "HL7->FHIR");
+        log1.put("status", "Success");
+        log1.put("timestamp", String.valueOf(new Date()));
+        log1.put("user", "ADMIN");
+        logs.add(log1);
+
+        return ResponseEntity.ok(logs);
     }
 
     private static Patient getPatient(IBaseResource resource) {

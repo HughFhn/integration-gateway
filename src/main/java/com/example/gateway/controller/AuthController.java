@@ -8,10 +8,14 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
@@ -33,20 +37,24 @@ public class AuthController {
             // Authenticate
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            authRequest.username,  // Direct field access
-                            authRequest.password   // Direct field access
+                            authRequest.username,
+                            authRequest.password
                     )
             );
 
             // Get user details
             final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.username);
 
-            // Generate token
-            final String jwt = jwtUtil.generateToken(userDetails.getUsername());
+            // Extract roles
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
 
-            // Log additional details
+            // Generate token
+            final String jwt = jwtUtil.generateTokenWithRoles(userDetails.getUsername(), roles);
+
             logger.info("Authentication successful for user: {}", authRequest.username);
-            logger.info("Generated JWT Token: {}", jwt);
+            logger.info("Roles: {}", roles);
 
             return ResponseEntity.ok(new AuthResponse("success", jwt));
         } catch (BadCredentialsException e) {

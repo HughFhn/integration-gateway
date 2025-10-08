@@ -10,46 +10,27 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 @Component
 public class JwtUtil {
 
-    private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(
+            "verySecurePassword123SuperSecretVery".getBytes(StandardCharsets.UTF_8)
+    );
+
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
     @Value("${jwt.expiration:86400}")
     private long expiration;
 
     public String extractUserName(String token) {
-        try {
-            // Log token details before parsing
-            logger.info("Token to Extract Username: {}", token);
-            logger.info("Token Period Count: {}", token.chars().filter(chars -> chars == '.').count());
-
-            // Detailed parsing
-            Claims claims = Jwts.parser()
-                    .setSigningKey(SECRET_KEY)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            return claims.getSubject();
-        } catch (Exception e) {
-            // Log full exception details
-            logger.error("Username Extraction Error", e);
-
-            // Log token parts for debugging
-            String[] parts = token.split("\\.");
-            for (int i = 0; i < parts.length; i++) {
-                logger.info("Token Part {}: {}", i, parts[i]);
-            }
-
-            throw new RuntimeException("Token parsing failed: " + e.getMessage(), e);
-        }
+        return extractClaim(token, Claims::getSubject);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -57,7 +38,7 @@ public class JwtUtil {
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY)
                 .build()
@@ -69,12 +50,18 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    public List<String> extractRoles(String token) {
+        Claims claims = extractAllClaims(token);
+        return (List<String>) claims.get("roles");
+    }
+
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String userName){
+    public String generateTokenWithRoles(String userName, List<String> roles) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", roles);
         return createToken(claims, userName);
     }
 
@@ -83,24 +70,18 @@ public class JwtUtil {
                 .setClaims(claims)
                 .setSubject(userName)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration  * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
                 .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public boolean validateToken(String token, String userName) {
         try {
-            // Add detailed logging
-            System.out.println("Token to validate: " + token);
-            System.out.println("Token length: " + token.split("\\.").length);
-
             final String extractedUserName = extractUserName(token);
             return extractedUserName.equals(userName) && !isTokenExpired(token);
         } catch (Exception e) {
-            // Log full stack trace for comprehensive debugging
-            e.printStackTrace();
+            logger.error("Token validation failed: {}", e.getMessage());
             return false;
         }
     }
-
 }
