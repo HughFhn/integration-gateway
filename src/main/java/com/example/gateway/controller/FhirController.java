@@ -43,6 +43,8 @@ public class FhirController {
 
     private int totalConversions = 0;
     private int successCount = 0;
+    private int HL7Count = 0;
+    private int FHIRCount = 0;
 
     public FhirController() {
     }
@@ -74,12 +76,13 @@ public class FhirController {
         return emitter;
     }
 
-    public void broadcastAudit(Date date, String type, String status, String user) {
+    public void broadcastAudit(Date date, String type, String status, String user, long latencyTime) {
         Map<String, String> broadcastMap = Map.of(
                 "Date", String.valueOf(date),
                 "Type", type,
                 "Status", status,
-                "User", user
+                "User", user,
+                "Latency", String.valueOf(latencyTime)
         );
 
         List<SseEmitter> deadEmitters = new ArrayList<>();
@@ -104,6 +107,12 @@ public class FhirController {
         // Remove all disconnected emitters to avoid future errors
         emitters.removeAll(deadEmitters);
 
+        if (type.startsWith("HL7")) {
+            HL7Count++;
+        }
+        else if(type.startsWith("Fhir")) {
+            FHIRCount++;
+        }
     }
 
     // Create a new patient
@@ -119,6 +128,7 @@ public class FhirController {
     // Convert Hl7 to Fhir Json
     @PostMapping("/convert/hl7-to-fhir")
     public ResponseEntity<String> convertHl7ToFhir(@RequestBody String hl7) {
+        long startTime = System.currentTimeMillis(); // Start latency timer
         System.out.println("\nReceived HL7:\n" + hl7); // Debug print
 
         try {
@@ -139,7 +149,8 @@ public class FhirController {
                 auditWriter.write("HL7→FHIR conversion performed at " + new Date() + "\n");
             }
             // Send success request to website
-            broadcastAudit(new Date(),"HL7 -> Fhir", "Success", "ADMIN");
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(),"HL7 -> Fhir", "Success", "ADMIN", latency);
 
             // record conversion success
             recordConversion(true);
@@ -149,7 +160,8 @@ public class FhirController {
         } catch (Exception e) {
 
             // Send failure request to website
-            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN");
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN", latency);
 
             // record conversion success
             recordConversion(false);
@@ -163,6 +175,7 @@ public class FhirController {
     // Convert Fhir Json -> Hl7
     @PostMapping("/convert/fhir-to-hl7")
     public ResponseEntity<String> convertFhirToHl7(@RequestBody String fhirJson) {
+        long startTime = System.currentTimeMillis();
         System.out.println("\nReceived Fhir Json:\n" + fhirJson); // Debug print
 
         try {
@@ -187,7 +200,9 @@ public class FhirController {
             }
 
             // Send this to website
-            broadcastAudit(new Date(),"Fhir -> HL7", "Success", "ADMIN");
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(),"Fhir -> HL7", "Success", "ADMIN", latency);
+
 
             // record conversion success
             recordConversion(true);
@@ -197,9 +212,11 @@ public class FhirController {
         } catch (Exception e) {
 
             // Send success request to website
-            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN");
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN", latency);
 
-            // record conversion success
+            // record conversion failure
+
             recordConversion(false);
 
             log.error("Failed to convert FHIR to HL7: {}", e.getMessage(), e);
@@ -219,23 +236,10 @@ public class FhirController {
         Map<String, Object> stats = Map.of(
                 "totalConversions", totalConversions,
                 "successRate", successRate,
-                "avgLatency", 120 // placeholder
+                "FHIRCount", FHIRCount,
+                "HL7Count", HL7Count
         );
         return ResponseEntity.ok(stats);
-    }
-
-    @GetMapping("/audit/recent")
-    public ResponseEntity<List<Map<String, String>>> getRecentAudits() {
-        List<Map<String, String>> logs = new ArrayList<>();
-
-        Map<String, String> log1 = new HashMap<>();
-        log1.put("type", "HL7->FHIR");
-        log1.put("status", "Success");
-        log1.put("timestamp", String.valueOf(new Date()));
-        log1.put("user", "ADMIN");
-        logs.add(log1);
-
-        return ResponseEntity.ok(logs);
     }
 
     private static Patient getPatient(IBaseResource resource) {
