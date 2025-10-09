@@ -213,7 +213,7 @@ public class FhirController {
 
             // Send success request to website
             long latency = System.currentTimeMillis() - startTime;
-            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN", latency);
+            broadcastAudit(new Date(),"Fhir -> HL7", "Failure", "ADMIN", latency);
 
             // record conversion failure
 
