@@ -6,15 +6,15 @@ In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly
 
 # The Following is the Stack of the Project.
 
-| Layer                 | Choice                | Version                 | Notes                                                                                       |     |
-| --------------------- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------- | --- |
-| JDK                   | Temurin / Oracle Java | 21 LTS                  | Current LTS. Plan a test branch for Java 25 LTS after it drops in Sept 2025. (Oracle, Java) |     |
-| Application Framework | Spring Boot           | 3.5.5 current           | Aligns with Spring Framework 6.2.x production line. (Home, GitHub)                          |     |
-| Middle-ware Framework | Apache Camel          | 4.14.0 (LTS)            | If you want a slightly longer-tested LTS, 4.10.6 LTS is also available. (Apache Camel)      |     |
-| Build                 | Maven                 | 3.9.11                  | Latest general availability. (Apache Maven)                                                 |     |
-| FHIR SDK              | HAPI FHIR             | 8.x (R4/R4B/R5 support) | R4B supported since 6.2; current 8.x artifacts available. (hapifhir.io, Maven Repository)   |     |
-| IDP + Authenticator   | JsonWebToken (jjwt)   | 0.12.5                  | Local implementation of issuing, adding and issuing.                                        |     |
-| TLS Library           | OpenSSL               | 3.0 (GA + LTS)          | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |     |
+| Layer                 | Choice                | Version                 | Notes                                                                                       |
+| --------------------- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
+| JDK                   | Temurin / Oracle Java | 21 LTS                  | Current LTS. Plan a test branch for Java 25 LTS after it drops in Sept 2025. (Oracle, Java) |
+| Application Framework | Spring Boot           | 3.5.5 current           | Aligns with Spring Framework 6.2.x production line. (Home, GitHub)                          |
+| Middle-ware Framework | Apache Camel          | 4.14.0 (LTS)            | If you want a slightly longer-tested LTS, 4.10.6 LTS is also available. (Apache Camel)      |
+| Build                 | Maven                 | 3.9.11                  | Latest general availability. (Apache Maven)                                                 |
+| FHIR SDK              | HAPI FHIR             | 8.x (R4/R4B/R5 support) | R4B supported since 6.2; current 8.x artifacts available. (hapifhir.io, Maven Repository)   |
+| IDP + Authenticator   | JsonWebToken (jjwt)   | 0.12.5                  | Local implementation of issuing, adding and issuing.                                        |
+| TLS Library           | OpenSSL               | 3.0 (GA + LTS)          | Latest line; 1.6.3 announced Nov 2024. (GitHub, mapstruct.org)                              |
 
 ---
 
