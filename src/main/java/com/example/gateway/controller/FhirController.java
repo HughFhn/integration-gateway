@@ -233,6 +233,9 @@ public class FhirController {
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         double successRate = totalConversions == 0 ? 0 : (successCount * 100.0 / totalConversions);
+        int decimalPlaces = 2;
+        double factor = Math.pow(10, decimalPlaces);
+        successRate = (double) Math.round(successRate * factor) / factor;
         Map<String, Object> stats = Map.of(
                 "totalConversions", totalConversions,
                 "successRate", successRate,
