@@ -110,7 +110,7 @@ public class FhirController {
         if (type.startsWith("HL7")) {
             HL7Count++;
         }
-        else if(type.startsWith("Fhir")) {
+        else if(type.startsWith("FHIR")) {
             FHIRCount++;
         }
     }
@@ -125,7 +125,7 @@ public class FhirController {
     }
     String auditPath = "output/audit.log";
 
-    // Convert Hl7 to Fhir Json
+    // Convert Hl7 to FHIR Json
     @PostMapping("/convert/hl7-to-fhir")
     public ResponseEntity<String> convertHl7ToFhir(@RequestBody String hl7) {
         long startTime = System.currentTimeMillis(); // Start latency timer
@@ -150,7 +150,7 @@ public class FhirController {
             }
             // Send success request to website
             long latency = System.currentTimeMillis() - startTime;
-            broadcastAudit(new Date(),"HL7 -> Fhir", "Success", "ADMIN", latency);
+            broadcastAudit(new Date(),"HL7 -> FHIR", "Success", "ADMIN", latency);
 
             // record conversion success
             recordConversion(true);
@@ -161,7 +161,7 @@ public class FhirController {
 
             // Send failure request to website
             long latency = System.currentTimeMillis() - startTime;
-            broadcastAudit(new Date(),"HL7 -> Fhir", "Failure", "ADMIN", latency);
+            broadcastAudit(new Date(),"HL7 -> FHIR", "Failure", "ADMIN", latency);
 
             // record conversion success
             recordConversion(false);
@@ -172,11 +172,11 @@ public class FhirController {
         }
     }
 
-    // Convert Fhir Json -> Hl7
+    // Convert FHIR Json -> Hl7
     @PostMapping("/convert/fhir-to-hl7")
     public ResponseEntity<String> convertFhirToHl7(@RequestBody String fhirJson) {
         long startTime = System.currentTimeMillis();
-        System.out.println("\nReceived Fhir Json:\n" + fhirJson); // Debug print
+        System.out.println("\nReceived FHIR Json:\n" + fhirJson); // Debug print
 
         try {
             var resource = fhirContext.newJsonParser().parseResource(fhirJson);
@@ -201,7 +201,7 @@ public class FhirController {
 
             // Send this to website
             long latency = System.currentTimeMillis() - startTime;
-            broadcastAudit(new Date(),"Fhir -> HL7", "Success", "ADMIN", latency);
+            broadcastAudit(new Date(),"FHIR -> HL7", "Success", "ADMIN", latency);
 
 
             // record conversion success
@@ -213,7 +213,7 @@ public class FhirController {
 
             // Send success request to website
             long latency = System.currentTimeMillis() - startTime;
-            broadcastAudit(new Date(),"Fhir -> HL7", "Failure", "ADMIN", latency);
+            broadcastAudit(new Date(),"FHIR -> HL7", "Failure", "ADMIN", latency);
 
             // record conversion failure
 
