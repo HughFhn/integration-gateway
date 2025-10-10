@@ -2,7 +2,7 @@
   "resourceType": "Bundle",
   "type": "message",
   "entry": [ {
-    "fullUrl": "urn:uuid:549fe99e-7a64-4790-bcac-45ac9fd174df",
+    "fullUrl": "urn:uuid:d86886d4-3fc4-478f-83e9-075436141836",
     "resource": {
       "resourceType": "MessageHeader",
       "eventCoding": {
@@ -23,7 +23,7 @@
       } ]
     }
   }, {
-    "fullUrl": "urn:uuid:b10b03eb-508c-4e62-8a83-d3a14e29a670",
+    "fullUrl": "urn:uuid:a0918e37-bf07-4e35-b122-135d05fa65fc",
     "resource": {
       "resourceType": "Patient",
       "id": "12345",
