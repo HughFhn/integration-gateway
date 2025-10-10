@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import ca.uhn.fhir.validation.ValidationResult;
+import com.example.gateway.InputValidator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -34,6 +37,9 @@ import static org.apache.jena.vocabulary.SchemaDO.event;
 @RequestMapping("/fhir")
 @CrossOrigin(origins = "http://localhost:3000") // allow React dev server
 public class FhirController {
+
+    @Autowired
+    private InputValidator validator;
 
     private static final Logger log = LoggerFactory.getLogger(FhirController.class);
     private final List<SseEmitter>  emitters = new CopyOnWriteArrayList<>();
@@ -131,6 +137,21 @@ public class FhirController {
         long startTime = System.currentTimeMillis(); // Start latency timer
         System.out.println("\nReceived HL7:\n" + hl7); // Debug print
 
+        // Validate
+        InputValidator.ValidationResult validationResult = validator.validateHl7Input(hl7);
+        if (!validationResult.isValid()) {
+            log.error("HL7 validation failed: {}", validationResult.getErrorMessage());
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(), "HL7 -> FHIR", "Failure", "ADMIN", latency);
+            recordConversion(false);
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "error", "Validation failed",
+                            "details", validationResult.getErrors()
+                    ).toString());
+        }
+
         try {
             // Use Hl7 util to parse message
             Message message = Hl7ParserUtil.parseHL7(hl7);
@@ -177,6 +198,21 @@ public class FhirController {
     public ResponseEntity<String> convertFhirToHl7(@RequestBody String fhirJson) {
         long startTime = System.currentTimeMillis();
         System.out.println("\nReceived FHIR Json:\n" + fhirJson); // Debug print
+
+        // Validate
+        InputValidator.ValidationResult validationResult = validator.validateFhirInput(fhirJson);
+        if (!validationResult.isValid()) {
+            log.error("FHIR validation failed: {}", validationResult.getErrorMessage());
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(), "FHIR -> HL7", "Failure", "ADMIN", latency);
+            recordConversion(false);
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "error", "Validation failed",
+                            "details", validationResult.getErrors()
+                    ).toString());
+        }
 
         try {
             var resource = fhirContext.newJsonParser().parseResource(fhirJson);
