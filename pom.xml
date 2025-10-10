@@ -186,6 +186,14 @@
             <artifactId>hapi-fhir-structures-r4</artifactId>
             <version>8.4.0</version>
         </dependency>
+
+        <!-- For Dotenv files -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>java-dotenv</artifactId>
+            <version>5.2.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>
