@@ -16,14 +16,13 @@ import java.util.regex.Pattern;
 @Component
 public class InputValidator {
 
+    private final FhirContext fhirContext;
     private static final int MAX_INPUT_SIZE = 1_000_000; // 1MB
     private static final Pattern HL7_SEGMENT_PATTERN = Pattern.compile("^[A-Z]{3}\\|");
     private static final Pattern MALICIOUS_PATTERN = Pattern.compile(
             "(<script|javascript:|onerror=|onload=|<iframe|eval\\(|exec\\()",
             Pattern.CASE_INSENSITIVE
     );
-
-    private final FhirContext fhirContext;
 
     public InputValidator() {
         this.fhirContext = FhirContext.forR4();
