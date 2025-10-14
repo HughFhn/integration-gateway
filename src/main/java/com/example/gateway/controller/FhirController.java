@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import ca.uhn.fhir.validation.ValidationResult;
 import com.example.gateway.InputValidator;
+import com.example.gateway.converter.REDCapToFhirConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.example.gateway.converter.FhirToHl7Converter;
 import com.example.gateway.converter.Hl7ToFhirConverter;
@@ -44,15 +43,18 @@ public class FhirController {
     private static final Logger log = LoggerFactory.getLogger(FhirController.class);
     private final List<SseEmitter>  emitters = new CopyOnWriteArrayList<>();
 
-    private final FhirContext fhirContext = FhirContext.forR4();
+    private final FhirContext fhirContext;
+
     private final Map<String, Patient> patientDatabase = new HashMap<>();
 
     private int totalConversions = 0;
     private int successCount = 0;
     private int HL7Count = 0;
     private int FHIRCount = 0;
+    private int REDCapCount = 0;
 
-    public FhirController() {
+    public FhirController(FhirContext fhirContext) {
+        this.fhirContext = fhirContext;
     }
 
     @GetMapping("/patient/{id}")
@@ -118,6 +120,9 @@ public class FhirController {
         }
         else if(type.startsWith("FHIR")) {
             FHIRCount++;
+        }
+        else if(type.startsWith("REDCap")) {
+            REDCapCount++;
         }
     }
 
@@ -252,7 +257,6 @@ public class FhirController {
             broadcastAudit(new Date(),"FHIR -> HL7", "Failure", "ADMIN", latency);
 
             // record conversion failure
-
             recordConversion(false);
 
             log.error("Failed to convert FHIR to HL7: {}", e.getMessage(), e);
@@ -260,12 +264,61 @@ public class FhirController {
                     .body("{\"error\":\"Conversion failed: " + e.getMessage() + "\"}");
         }
     }
+    
+    // Conversion REDCap -> FHIR
+    @PostMapping("/convert/redcap-to-fhir")
+    public ResponseEntity<String> convertRedcapToFhir(@RequestBody Map<String, Object> redcapRecord) {
+        long startTime = System.currentTimeMillis();
+        System.out.println("\nReceived REDCap JSON:\n" + redcapRecord); // Debug print
 
+        try {
+            // Convert using your existing converter
+            String fhirJson = REDCapToFhirConverter.convert(redcapRecord, fhirContext);
+
+            // Ensure output directory exists
+            new File("output").mkdirs();
+
+            // Save converted FHIR to file
+            String outputPath = "output/test-fhir-from-redcap.json";
+            try (FileWriter fw = new FileWriter(outputPath)) {
+                fw.write(fhirJson);
+            }
+
+            // Write audit entry
+            try (FileWriter auditWriter = new FileWriter(auditPath, true)) {
+                auditWriter.write("REDCap→FHIR conversion performed at " + new Date() + "\n");
+            }
+
+            long latency = System.currentTimeMillis() - startTime;
+
+            // Send SSE broadcast to your React frontend
+            broadcastAudit(new Date(), "REDCap -> FHIR", "Success", "ADMIN", latency);
+
+            // Record conversion success
+            recordConversion(true);
+
+            log.info("Conversion complete! FHIR JSON output saved to {}", outputPath);
+            return ResponseEntity.ok(fhirJson);
+
+        } catch (Exception e) {
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(), "REDCap -> FHIR", "Failure", "ADMIN", latency);
+            recordConversion(false);
+
+            log.error("Failed to convert REDCap record to FHIR: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\":\"Conversion failed: " + e.getMessage() + "\"}");
+        }
+    }
+
+
+    // Set a conversion tracker that updates
     private synchronized void recordConversion(boolean success) {
         totalConversions++;
         if (success) successCount++;
     }
 
+    // Endpoint to retrieve stats on conversions
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         double successRate = totalConversions == 0 ? 0 : (successCount * 100.0 / totalConversions);
@@ -276,7 +329,8 @@ public class FhirController {
                 "totalConversions", totalConversions,
                 "successRate", successRate,
                 "FHIRCount", FHIRCount,
-                "HL7Count", HL7Count
+                "HL7Count", HL7Count,
+                "REDCapCount", REDCapCount
         );
         return ResponseEntity.ok(stats);
     }
