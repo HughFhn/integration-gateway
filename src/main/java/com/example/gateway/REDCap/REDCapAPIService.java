@@ -1,13 +1,13 @@
 package com.example.gateway.REDCap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
@@ -15,8 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import javax.net.ssl.SSLContext;
+import java.io.*;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +51,20 @@ public class REDCapAPIService {
                 params.add(new BasicNameValuePair("filterLogic", filterLogic));
             }
 
-            HttpClient client = HttpClientBuilder.create().build();
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            FileInputStream fis = new FileInputStream("src/main/resources/ssl/redcap-truststore.jks");
+            trustStore.load(fis, "changeit".toCharArray());
+
+            SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
+                    .loadTrustMaterial(trustStore, null)
+                    .build();
+
+            SSLConnectionSocketFactory sslFactory = new SSLConnectionSocketFactory(sslContext);
+
+            CloseableHttpClient client = HttpClientBuilder.create()
+                    .setSSLSocketFactory(sslFactory)
+                    .build();
+
             HttpPost post = new HttpPost(config.getApiUrl());
             post.setHeader("Content-Type", "application/x-www-form-urlencoded");
             post.setEntity(new UrlEncodedFormEntity(params));
