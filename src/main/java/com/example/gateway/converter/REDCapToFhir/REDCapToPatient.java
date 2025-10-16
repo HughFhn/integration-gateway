@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Map;
 
-import static org.apache.commons.collections4.MapUtils.getString;
+import static org.apache.commons.collections4.MapUtils.*;
 
 public class REDCapToPatient {
     private static final Logger log = LoggerFactory.getLogger(REDCapToPatient.class);
@@ -30,6 +30,9 @@ public class REDCapToPatient {
 
         // Birth Date
         mapBirthDate(patient, redcapRecord);
+
+        // Check consent (Event Listener for new record being uploaded?)
+        mapConsent(patient, redcapRecord);
 
         return patient;
     }
@@ -68,10 +71,10 @@ public class REDCapToPatient {
     }
 
     private static void mapGender(Patient patient, Map<String, Object> record) {
-        String genderVal = getString(record, "gender");
-        if (genderVal != null && !genderVal.isEmpty()) {
+        int genderVal = getIntValue(record, "gender");
+        if (genderVal >= 0) {
             try {
-                patient.setGender(mapGenderToAdministrativeGender(genderVal));
+                patient.setGender(mapGenderToAdministrativeGender(String.valueOf(genderVal)));
             } catch (Exception e) {
                 log.warn("Could not map gender: {}", genderVal);
             }
@@ -79,18 +82,19 @@ public class REDCapToPatient {
     }
 
     private static Enumerations.AdministrativeGender mapGenderToAdministrativeGender(String genderVal) {
-        switch (genderVal.toLowerCase(Locale.ROOT)) {
-            case "male":
+        switch (genderVal) {
+            case "1":
                 return Enumerations.AdministrativeGender.MALE;
-            case "female":
+            case "2":
                 return Enumerations.AdministrativeGender.FEMALE;
-            case "other":
+            case "3":
                 return Enumerations.AdministrativeGender.OTHER;
             default:
                 return Enumerations.AdministrativeGender.UNKNOWN;
         }
     }
 
+    // Map birthday
     private static void mapBirthDate(Patient patient, Map<String, Object> record) {
         String birthDateVal = getString(record, "birth_date");
         if (birthDateVal != null && !birthDateVal.isEmpty()) {
@@ -99,6 +103,27 @@ public class REDCapToPatient {
                 patient.setBirthDate(new SimpleDateFormat("yyyy-MM-dd").parse(birthDateVal));
             } catch (ParseException e) {
                 log.warn("Invalid birth date format: {}", birthDateVal);
+            }
+        }
+    }
+
+    // Possible event reader
+    private static void mapConsent(Patient patient, Map<String, Object> record) {
+        String consent = getString(record, "consent_reg");
+        if (consent != null && !consent.isEmpty()) {
+            try {
+                if (consent.equalsIgnoreCase("1")) {
+                    log.debug("Can convert data");
+                }
+                else if (consent.equalsIgnoreCase("0")) {
+                    log.debug("Can't convert data");
+                }
+                else{
+                    log.warn("Invalid consent: {}", consent);
+                }
+
+            } catch (Exception e) {
+                log.warn("Received Following Exception: ", e.getMessage());
             }
         }
     }

@@ -52,7 +52,8 @@ public class REDCapAPIService {
             }
 
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            FileInputStream fis = new FileInputStream("src/main/resources/ssl/redcap-truststore.jks");
+            String trustStorePath = System.getenv().getOrDefault("TRUSTSTORE_PATH", "src/main/resources/ssl/redcap-truststore.jks");
+            FileInputStream fis = new FileInputStream(trustStorePath);
             trustStore.load(fis, "changeit".toCharArray());
 
             SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()

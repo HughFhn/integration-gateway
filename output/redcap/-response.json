@@ -2,7 +2,7 @@
   "resourceType": "Bundle",
   "type": "message",
   "entry": [ {
-    "fullUrl": "urn:uuid:2fc1032a-b738-44ee-ae9a-b00a079a8334",
+    "fullUrl": "urn:uuid:1817c05e-1f30-45c4-ae3a-d09d12f0e958",
     "resource": {
       "resourceType": "MessageHeader",
       "eventCoding": {
@@ -15,41 +15,15 @@
       } ]
     }
   }, {
-    "fullUrl": "urn:uuid:ca763a71-50bc-4365-a038-d115dcd6cca2",
+    "fullUrl": "urn:uuid:a69ca51d-1fb5-4d20-a146-5740af656957",
     "resource": {
       "resourceType": "Patient",
       "name": [ {
         "family": "Doe",
         "given": [ "John" ]
       } ],
-      "gender": "unknown"
-    }
-  } ]
-}{
-  "resourceType": "Bundle",
-  "type": "message",
-  "entry": [ {
-    "fullUrl": "urn:uuid:669e1bbc-5711-4f23-873e-44aca17399f9",
-    "resource": {
-      "resourceType": "MessageHeader",
-      "eventCoding": {
-        "system": "http://hl7.org/fhir/message-events",
-        "code": "REDCap-Patient-Import",
-        "display": "REDCap Patient Import"
-      },
-      "focus": [ {
-        "reference": "Patient/null"
-      } ]
-    }
-  }, {
-    "fullUrl": "urn:uuid:af01f399-e411-4c8a-aa5f-f5f21c32a114",
-    "resource": {
-      "resourceType": "Patient",
-      "name": [ {
-        "family": "Doe",
-        "given": [ "Jane" ]
-      } ],
-      "gender": "unknown"
+      "gender": "other",
+      "birthDate": "2025-10-08"
     }
   } ]
 }
