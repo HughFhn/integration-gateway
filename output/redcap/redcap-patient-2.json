@@ -1,0 +1,29 @@
+{
+  "resourceType": "Bundle",
+  "type": "message",
+  "entry": [ {
+    "fullUrl": "urn:uuid:e91abbfd-f94a-42c3-8f80-ff193256ec83",
+    "resource": {
+      "resourceType": "MessageHeader",
+      "eventCoding": {
+        "system": "http://hl7.org/fhir/message-events",
+        "code": "REDCap-Patient-Import",
+        "display": "REDCap Patient Import"
+      },
+      "focus": [ {
+        "reference": "Patient/null"
+      } ]
+    }
+  }, {
+    "fullUrl": "urn:uuid:c1e2e42d-7438-4d85-9aea-680cb9f95f68",
+    "resource": {
+      "resourceType": "Patient",
+      "name": [ {
+        "family": "Doe",
+        "given": [ "Jane" ]
+      } ],
+      "gender": "unknown",
+      "birthDate": "2025-09-10"
+    }
+  } ]
+}

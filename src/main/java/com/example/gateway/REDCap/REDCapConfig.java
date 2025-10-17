@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class Config {
+public class REDCapConfig {
 
     @Value("${redcap.api.token}")
     private String apiToken;

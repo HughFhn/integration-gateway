@@ -30,8 +30,6 @@ import com.example.gateway.utils.Hl7ParserUtil;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.hl7v2.model.Message;
 
-import static org.apache.jena.vocabulary.SchemaDO.event;
-
 @RestController
 @RequestMapping("/fhir")
 @CrossOrigin(origins = "http://localhost:3000") // allow React dev server

@@ -3,7 +3,6 @@ package com.example.gateway.REDCap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -27,11 +26,11 @@ public class REDCapAPIService {
     private static final Logger log = LoggerFactory.getLogger(REDCapAPIService.class);
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private final Config config;
+    private final REDCapConfig REDCapConfig;
 
     @Autowired
-    public REDCapAPIService(Config config) {
-        this.config = config;
+    public REDCapAPIService(REDCapConfig REDCapConfig) {
+        this.REDCapConfig = REDCapConfig;
     }
 
 
@@ -39,7 +38,7 @@ public class REDCapAPIService {
     public String getRecords(List<String> fields, String filterLogic) {
         try {
             List<NameValuePair> params = new ArrayList<>();
-            params.add(new BasicNameValuePair("token", config.getApiToken()));
+            params.add(new BasicNameValuePair("token", REDCapConfig.getApiToken()));
             params.add(new BasicNameValuePair("content", "record"));
             params.add(new BasicNameValuePair("format", "json"));
             params.add(new BasicNameValuePair("type", "flat"));
@@ -51,9 +50,27 @@ public class REDCapAPIService {
                 params.add(new BasicNameValuePair("filterLogic", filterLogic));
             }
 
+            String apiUrl = REDCapConfig.getApiUrl();
+            log.info("REDCap API URL: {}", apiUrl);
+            if (apiUrl == null || apiUrl.isEmpty()) {
+                log.error("REDCap API URL is not configured. Please check application properties.");
+                return null;
+            }
+
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            FileInputStream fis = new FileInputStream("src/main/resources/ssl/redcap-truststore.jks");
-            trustStore.load(fis, "changeit".toCharArray());
+            String trustStorePath = "src/main/resources/ssl/redcap-truststore.jks";
+            log.info("Truststore path: {}", trustStorePath);
+
+            try (FileInputStream fis = new FileInputStream(trustStorePath)) {
+                trustStore.load(fis, "changeit".toCharArray());
+                log.info("Truststore loaded successfully.");
+            } catch (FileNotFoundException e) {
+                log.error("Truststore file not found at {}. Please ensure the file exists.", trustStorePath, e);
+                return null;
+            } catch (IOException e) {
+                log.error("Error loading truststore from {}. Please check the file and password.", trustStorePath, e);
+                return null;
+            }
 
             SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom()
                     .loadTrustMaterial(trustStore, null)
@@ -65,7 +82,7 @@ public class REDCapAPIService {
                     .setSSLSocketFactory(sslFactory)
                     .build();
 
-            HttpPost post = new HttpPost(config.getApiUrl());
+            HttpPost post = new HttpPost(REDCapConfig.getApiUrl());
             post.setHeader("Content-Type", "application/x-www-form-urlencoded");
             post.setEntity(new UrlEncodedFormEntity(params));
 
@@ -81,6 +98,7 @@ public class REDCapAPIService {
             }
 
             log.info("Retrieved Records from REDCap");
+            System.out.println(result);
             return result.toString();
 
         } catch (Exception e) {

@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.camel.ProducerTemplate;
+
 @Component
 public class REDCapRoute extends RouteBuilder {
 
@@ -21,6 +23,9 @@ public class REDCapRoute extends RouteBuilder {
 
     @Autowired
     private REDCapAPIService redcapService;
+
+    @Autowired
+    private ProducerTemplate template;
 
     private final FhirContext fhirContext = FhirContext.forR4();
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -43,18 +48,17 @@ public class REDCapRoute extends RouteBuilder {
                     // Parse into Json records
                     List<Map<String, Object>> records = mapper.readValue(redcapJson, new TypeReference<>() {});
 
-                    // Convert records to fhir
-                    StringBuilder FHIR = new StringBuilder();
+                    // Convert records to fhir and write each to a separate file
                     for (Map<String, Object> record : records) {
                         String fhirJson = REDCapToFhirConverter.convert(record, fhirContext);
-                        FHIR.append(fhirJson);
+                        // Use a unique file name for each patient, e.g., based on record ID or a generated UUID
+                        String fileName = "redcap-patient-" + record.get("study_id") + ".json";
+                        template.sendBodyAndHeader("file:output/redcap", fhirJson, "CamelFileName", fileName);
                     }
 
-                    exchange.getMessage().setBody(FHIR.toString());
+                    exchange.getMessage().setBody("REDCap records processed and saved as individual FHIR JSON files.");
                 })
-                // Write conversion to a file in the output folder
-                .to("file:output/redcap?fileName=${file:name.noext}-response.json")
                 // Log completion
-                .log("REDCap import completed: ${file:name.noext}-response.json");
+                .log("REDCap import completed: Individual FHIR JSON files created.");
     }
 }
