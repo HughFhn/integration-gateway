@@ -1,7 +1,6 @@
 package com.example.gateway.routes;
 
 import ca.uhn.fhir.context.FhirContext;
-import com.example.gateway.InputValidator;
 import com.example.gateway.REDCap.REDCapAPIService;
 import com.example.gateway.converter.REDCapToFhirConverter;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -49,27 +48,6 @@ public class REDCapRoute extends RouteBuilder {
                     for (Map<String, Object> record : records) {
                         String fhirJson = REDCapToFhirConverter.convert(record, fhirContext);
                         FHIR.append(fhirJson);
-                    }
-
-                    // Validates the converter works
-                    if (String.valueOf(FHIR).contains("family")) {
-                        String jsonString = "\"family\": \"Doe\",\n\"given\": [ \"John\" ]";
-                        int familyIndex = jsonString.indexOf("\"family\":");
-                        if (familyIndex != -1) {
-                            // Find the start of the family name (after the colon and quotes)
-                            int startIndex = jsonString.indexOf("\"", familyIndex + 9) + 1;
-                            // Find the end of the family name (next quote)
-                            int endIndex = jsonString.indexOf("\"", startIndex);
-
-                            // Extract the family name
-                            String familyName = jsonString.substring(startIndex, endIndex);
-
-                            // Print the result
-                            log.debug("Family name detected: " + familyName);  // This will print: Family name detected: Doe
-                        }
-                    }
-                    else {
-                        log.warn("Invalid FHIR Json conversion.");
                     }
 
                     exchange.getMessage().setBody(FHIR.toString());
