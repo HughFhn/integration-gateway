@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class Convert {
+public class ConvertTest {
 
     // URLs for conversion
     private static final String FhirToHl7 = "http://localhost:8081/fhir/convert/fhir-to-hl7";
