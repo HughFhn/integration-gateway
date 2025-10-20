@@ -235,7 +235,7 @@ public class FhirController {
 
             // Write audit log (append mode so you don’t overwrite)
             try (FileWriter auditWrite = new FileWriter(auditPath, true)) {
-                auditWrite.write("FHIR→HL7 conversion performed at " + dateNow + "\n");
+                auditWrite.write("FHIR -> HL7 conversion performed at " + dateNow + "\n");
             }
 
             // Send this to website
@@ -269,6 +269,21 @@ public class FhirController {
         long startTime = System.currentTimeMillis();
         System.out.println("\nReceived REDCap JSON:\n" + redcapRecord); // Debug print
 
+        // Validate
+        InputValidator.ValidationResult validationResult = validator.validateRedcapInput(redcapRecord.toString());
+        if (!validationResult.isValid()) {
+            log.error("REDCap validation failed: {}", validationResult.getErrorMessage());
+            long latency = System.currentTimeMillis() - startTime;
+            broadcastAudit(new Date(), "REDCap -> HL7", "Failure", "ADMIN", latency);
+            recordConversion(false);
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "error", "Validation failed",
+                            "details", validationResult.getErrors()
+                    ).toString());
+        }
+
         try {
             // Convert using your existing converter
             String fhirJson = REDCapToFhirConverter.convert(redcapRecord, fhirContext);
@@ -284,7 +299,7 @@ public class FhirController {
 
             // Write audit entry
             try (FileWriter auditWriter = new FileWriter(auditPath, true)) {
-                auditWriter.write("REDCap→FHIR conversion performed at " + new Date() + "\n");
+                auditWriter.write("REDCap -> FHIR conversion performed at " + new Date() + "\n");
             }
 
             long latency = System.currentTimeMillis() - startTime;

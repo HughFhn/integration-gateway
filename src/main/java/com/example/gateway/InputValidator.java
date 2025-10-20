@@ -95,32 +95,15 @@ public class InputValidator {
     }
 
 
-    // Validates FHIR JSON input
+    // ====Validates FHIR JSON input====
     public ValidationResult validateFhirInput(String fhirJson) {
+        // Create list to store possible errors
         List<String> errors = new ArrayList<>();
 
-        // Check for null or empty
-        if (fhirJson == null || fhirJson.trim().isEmpty()) {
-            errors.add("FHIR input cannot be null or empty");
-            return new ValidationResult(false, errors);
-        }
-
-        // Check size limits
-        if (fhirJson.length() > MAX_INPUT_SIZE) {
-            errors.add("FHIR input exceeds maximum size of " + MAX_INPUT_SIZE + " characters");
-            return new ValidationResult(false, errors);
-        }
-
-        // Check for malicious content
-        if (MALICIOUS_PATTERN.matcher(fhirJson).find()) {
-            errors.add("FHIR input contains potentially malicious content");
-            return new ValidationResult(false, errors);
-        }
-
-        // Validate JSON structure
-        if (!fhirJson.trim().startsWith("{")) {
-            errors.add("FHIR input must be valid JSON");
-            return new ValidationResult(false, errors);
+        ValidationResult jsonCheck = isValidJson(fhirJson);
+        if (!jsonCheck.isValid()) {
+            // Immediately return with those errors
+            return jsonCheck;
         }
 
         // Attempt to parse as FHIR resource
@@ -153,7 +136,8 @@ public class InputValidator {
         } catch (DataFormatException e) {
             errors.add("Invalid FHIR JSON format: " + e.getMessage());
             return new ValidationResult(false, errors);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             errors.add("Failed to parse FHIR resource: " + e.getMessage());
             return new ValidationResult(false, errors);
         }
@@ -202,6 +186,80 @@ public class InputValidator {
             }
         }
         return null;
+    }
+
+
+    // ====Validates REDCap Json Format====
+    public ValidationResult validateRedcapInput(String redcapJson){
+        // Create list for errors
+        List<String> errors = new ArrayList();
+
+        ValidationResult jsonCheck = isValidJson(redcapJson);
+            if (!jsonCheck.isValid()) {
+            // Immediately return with those errors
+            return jsonCheck;
+        }
+
+        try {
+            // First section of the extracted json
+            if (!redcapJson.contains("study_id")){
+                errors.add("REDCap json contains no study_id field");
+            }
+
+            // Last section of the json
+            if (!redcapJson.contains("test_complete")){
+                errors.add("REDCap json contains no test_complete field");
+            }
+
+            // These 2 checks can check if the complete message was taken
+        }
+
+        catch (DataFormatException e) {
+            errors.add("Invalid REDCap JSON format: " + e.getMessage());
+            return new ValidationResult(false, errors);
+        }
+        catch (Exception e) {
+            errors.add("Failed to parse REDCap: " + e.getMessage());
+            return new ValidationResult(false, errors);
+        }
+
+        return errors.isEmpty()
+        ? new ValidationResult(true, null)
+        : new ValidationResult(false, errors);
+    }
+
+
+    // ====Validates Json Format====
+    private ValidationResult isValidJson(String message){
+        List<String> errors = new ArrayList<>();
+
+        // Check for null or empty
+        if (message == null || message.trim().isEmpty()) {
+            errors.add("FHIR input cannot be null or empty");
+            return new ValidationResult(false, errors);
+        }
+
+        // Check size limits
+        if (message.length() > MAX_INPUT_SIZE) {
+            errors.add("FHIR input exceeds maximum size of " + MAX_INPUT_SIZE + " characters");
+            return new ValidationResult(false, errors);
+        }
+
+        // Check for malicious content
+        if (MALICIOUS_PATTERN.matcher(message).find()) {
+            errors.add("FHIR input contains potentially malicious content");
+            return new ValidationResult(false, errors);
+        }
+
+        // Validate JSON structure
+        if (!message.trim().startsWith("{")) {
+            errors.add("FHIR input must be valid JSON");
+            return new ValidationResult(false, errors);
+        }
+
+        return errors.isEmpty()
+                ? new ValidationResult(true, null)
+                : new ValidationResult(false, errors);
     }
 
 
