@@ -1,6 +1,6 @@
 # FHIRGateway
 
----
+
 The following project is a FHIR Gateway. It retrieves data from a source in a certain format and when determining its destination it will transform the data as required. (Eg: HL7 -> FHIR Json)  
 In the future this will implement APIs for REDCap, DHIS2, MN-CMS, CPIP2 possibly EPIC and other destinations in the future like the registry. The following is a document written to track the progress with the development of the foundation of transforming this data, common errors and problems encountered when making and using this application.
 
@@ -225,6 +225,7 @@ Stages of REDCap Conversion:
 | 3.  | Convert to FHIR   | REDCapToFhirConverter | Converts the REDCap Json to a FHIR bundle with Patient resource (Can be expanded if required) |
 | 4.  | Map Fields        | REDCapToPatient       | Maps REDCap fields to FHIR patient fields                                                     |
 | 5.  | Save Output       | FhirController        | Sends result to a HTTP endpoint                                                               |
+
 The result is sent to the admin dashboard via an SSE or a Server-Sent Event. By using this, the dashboard is able to retrieve real-time updates from the Apache Camel application.  
 The emitters are sent to the frontend and the messages/ events they contain are parsed and displayed.
 
