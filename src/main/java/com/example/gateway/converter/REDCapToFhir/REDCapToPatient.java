@@ -80,11 +80,11 @@ public class REDCapToPatient {
 
     private static Enumerations.AdministrativeGender mapGenderToAdministrativeGender(String genderVal) {
         switch (genderVal.toLowerCase(Locale.ROOT)) {
-            case "male":
+            case "1":
                 return Enumerations.AdministrativeGender.MALE;
-            case "female":
+            case "2":
                 return Enumerations.AdministrativeGender.FEMALE;
-            case "other":
+            case "3":
                 return Enumerations.AdministrativeGender.OTHER;
             default:
                 return Enumerations.AdministrativeGender.UNKNOWN;
