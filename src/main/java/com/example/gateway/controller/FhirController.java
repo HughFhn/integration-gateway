@@ -179,7 +179,9 @@ public class FhirController {
             // record conversion success
             recordConversion(true);
 
-            log.info("Conversion complete! FHIR JSON output saved.");
+            System.out.print( "Converted HL7 -> FhirJson: \n"+fhirJson);
+
+            log.info("Conversion complete! FHIR JSON output saved and printed.");
             return ResponseEntity.ok(fhirJson);
         } catch (Exception e) {
 
@@ -245,7 +247,10 @@ public class FhirController {
 
             // record conversion success
             recordConversion(true);
-            log.info("Conversion complete! HL7 message saved.");
+
+            System.out.print( "Converted FhirJson -> HL7: \n"+hl7Message);
+
+            log.info("Conversion complete! HL7 message saved and printed.");
             return ResponseEntity.ok(hl7Message);
 
         } catch (Exception e) {
@@ -310,7 +315,10 @@ public class FhirController {
             // Record conversion success
             recordConversion(true);
 
-            log.info("Conversion complete! FHIR JSON output saved to {}", outputPath);
+            log.info("Conversion complete! FHIR JSON output saved to {} and printed", outputPath);
+
+            System.out.print( "Converted REDCap -> FhirJson: \n"+fhirJson);
+
             return ResponseEntity.ok(fhirJson);
 
         } catch (Exception e) {
