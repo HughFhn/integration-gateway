@@ -21,15 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class REDCapAPIService {
+public class REDCapRecords {
 
-    private static final Logger log = LoggerFactory.getLogger(REDCapAPIService.class);
+    private static final Logger log = LoggerFactory.getLogger(REDCapRecords.class);
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final REDCapConfig REDCapConfig;
 
     @Autowired
-    public REDCapAPIService(REDCapConfig REDCapConfig) {
+    public REDCapRecords(REDCapConfig REDCapConfig) {
         this.REDCapConfig = REDCapConfig;
     }
 

@@ -1,7 +1,7 @@
 package com.example.gateway.routes;
 
 import ca.uhn.fhir.context.FhirContext;
-import com.example.gateway.REDCap.REDCapAPIService;
+import com.example.gateway.REDCap.REDCapRecords;
 import com.example.gateway.converter.REDCapToFhirConverter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +22,7 @@ public class REDCapRoute extends RouteBuilder {
     private static final Logger log = LoggerFactory.getLogger(REDCapRoute.class);
 
     @Autowired
-    private REDCapAPIService redcapService;
+    private REDCapRecords redcapService;
 
     @Autowired
     private ProducerTemplate template;
