@@ -1,22 +1,24 @@
-package com.example.gateway.REDCap;
+// **File used for configuring redcap url and token. Uncomment this file and alter application.properties to include a url and api token and should function**
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+// package com.example.gateway.REDCap;
 
-@Configuration
-public class REDCapConfig {
+// import org.springframework.beans.factory.annotation.Value;
+// import org.springframework.context.annotation.Configuration;
 
-    @Value("${redcap.api.token}")
-    private String apiToken;
+// @Configuration
+// public class REDCapConfig {
 
-    @Value("${redcap.api.url}")
-    private String apiUrl;
+//     @Value("${redcap.api.token}")
+//     private String apiToken;
 
-    public String getApiToken() {
-        return apiToken;
-    }
+//     @Value("${redcap.api.url}")
+//     private String apiUrl;
 
-    public String getApiUrl() {
-        return apiUrl;
-    }
-}
+//     public String getApiToken() {
+//         return apiToken;
+//     }
+
+//     public String getApiUrl() {
+//         return apiUrl;
+//     }
+// }
