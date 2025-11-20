@@ -17,6 +17,7 @@ public class ConvertTest {
 
     // Files containing input for formats
     private static String FhirInput;
+
     static {
         try {
             FhirInput = Files.readString(Path.of("input/.camel/test.json"));
@@ -26,6 +27,7 @@ public class ConvertTest {
     }
 
     private static String Hl7Input;
+
     static {
         try {
             Hl7Input = Files.readString(Path.of("input/.camel/test.hl7"));
@@ -63,7 +65,7 @@ public class ConvertTest {
         con.setRequestProperty("Authorization", "Bearer " + token);
         con.setDoOutput(true);
 
-        try(OutputStream os = con.getOutputStream()) {
+        try (OutputStream os = con.getOutputStream()) {
             byte[] input = inputFormat.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
@@ -89,7 +91,6 @@ public class ConvertTest {
 
         //SslUtil.disableCertificateValidation(); // Trusts any no matter the cert/address
         // Make links https and update application.properties to be secure // *ONLY FOR TESTING REMOVE FOR REAL DEPLOY*
-
         // Get token then use to post HL7 request
         System.out.println("=".repeat(20));
         System.out.println("HL7 To Fhir");

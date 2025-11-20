@@ -1,6 +1,7 @@
 package com.example.gateway.routes;
 
 import ca.uhn.fhir.context.FhirContext;
+import com.example.gateway.REDCap.REDCapLogs;
 import com.example.gateway.REDCap.REDCapRecords;
 import com.example.gateway.converter.REDCapToFhirConverter;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -11,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +28,9 @@ public class REDCapRoute extends RouteBuilder {
     private REDCapRecords redcapService;
 
     @Autowired
+    private REDCapLogs redcapLogs;
+
+    @Autowired
     private ProducerTemplate template;
 
     private final FhirContext fhirContext = FhirContext.forR4();
@@ -33,7 +39,7 @@ public class REDCapRoute extends RouteBuilder {
     @Override
     public void configure() {
 
-        from("timer://fetchRedcap?period=60000") // every 60 seconds it pulls
+        from("timer://fetchRedcap?period=60000") // every 60 seconds it pulls new end time
                 .routeId("redcap-fetch-and-convert")
                 .process(exchange -> {
                     log.info("Fetching records from REDCap...");
@@ -57,6 +63,9 @@ public class REDCapRoute extends RouteBuilder {
                     }
 
                     exchange.getMessage().setBody("REDCap records processed and saved as individual FHIR JSON files.");
+
+                    log.debug("============== LOGGING DATA ==============");
+                    log.debug("Logging Json - \n"+ redcapLogs.getLogs());
                 })
                 // Log completion
                 .log("REDCap import completed: Individual FHIR JSON files created.");

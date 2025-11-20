@@ -2,7 +2,7 @@
   "resourceType": "Bundle",
   "type": "message",
   "entry": [ {
-    "fullUrl": "urn:uuid:a53613d6-8e59-4e48-a590-7bffd334419a",
+    "fullUrl": "urn:uuid:2d1f2c63-8b31-48d2-b446-c1a0f7c70ddf",
     "resource": {
       "resourceType": "MessageHeader",
       "eventCoding": {
@@ -11,22 +11,19 @@
         "display": "REDCap Patient Import"
       },
       "focus": [ {
-        "reference": "Patient/123"
+        "reference": "Patient/null"
       } ]
     }
   }, {
-    "fullUrl": "urn:uuid:8a37761d-eba4-46f8-b772-b6e10d4cfa33",
+    "fullUrl": "urn:uuid:37dbe7f0-3bd7-42e6-b8c0-825b4f643bca",
     "resource": {
       "resourceType": "Patient",
-      "id": "123",
-      "identifier": [ {
-        "system": "urn:redcap:record",
-        "value": "123"
-      } ],
       "name": [ {
         "family": "Doe",
         "given": [ "John" ]
-      } ]
+      } ],
+      "gender": "male",
+      "birthDate": "2025-10-17"
     }
   } ]
 }

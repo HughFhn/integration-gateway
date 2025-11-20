@@ -19,6 +19,10 @@ The following data is imported with every conversion:
 * User
 * Latency of conversion
 
-### Diagrams
+### Pie Chart
 I utilised a MUI pie chart for simple visual representation on the most common conversion type and using a donut component on it, 
 I displayed the success to failure ratio also.
+
+### Table
+The table was also an MUI component. This table is very customisable and is vital for displaying conversions between certain types and the time taken for those conversions.
+Aswell as assessing whether it ws a success or a failure.
