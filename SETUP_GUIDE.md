@@ -1,85 +1,71 @@
-# Setup and User Guide
+# Setup and Running Guide (Docker)
 
-This guide provides step-by-step instructions on how to set up and run the FHIR Gateway application on your local machine.
+This guide will walk you through the process of setting up and running the FHIR Gateway application using Docker. This is the recommended approach as it simplifies setup and ensures a consistent environment.
 
 ## Prerequisites
 
-Before you start, ensure you have the following software installed:
+Before you begin, ensure you have the following software installed on your system:
 
--   **Git:** For cloning the project repository.
--   **Java 17:** Required for the backend services.
--   **Maven:** To build and run the Java backend.
--   **Node.js:** To run the frontend application.
--   **npm:** For managing frontend dependencies (usually comes with Node.js).
+- **Docker:** For building and running the application containers.
+- **Docker Compose:** For orchestrating the multi-container application.
 
----
+## 1. Clone the Repository
 
-## Setup Instructions
-
-### 1. Clone the Repository
-
-Open your terminal or command prompt and clone the repository to your local machine:
+Clone the project repository from GitHub to your local machine. Open your terminal or command prompt and run the following command:
 
 ```bash
 git clone <repository-url>
 ```
-*(Replace `<repository-url>` with the actual URL of the Git repository.)*
+
+_(Replace `<repository-url>` with the actual URL of the Git repository.)_
 
 ### 2. Run the Backend Server
 
-The backend is a Spring Boot application. To start the server, navigate to the root directory of the project in your terminal and run the following command:
+With Docker and Docker Compose installed, running the application is as simple as a single command.  
+In the root dir of the project type the following:
 
 ```bash
-mvn spring-boot:run
+docker compose up --build
 ```
 
-The backend server will start on `http://localhost:8081`.
+This command will:
 
-### 3. Run the Frontend Application
+1.  Build the Docker images for both the backend and frontend services.
+2.  Start the containers for both services.
 
-For this step, you will need a new terminal window.
+The backend will be accessible at `http://localhost:8081`, and the frontend will be accessible at `http://localhost:3000`.
 
-First, navigate to the frontend application's directory:
+_Note: This will take awhile upon first use, subsequent occassions will have some data cached and improve the speed._
+
+## 3. Using the Application
+
+Now that the application is running, you can use it.
+
+### a. Logging In
+
+Open your web browser and navigate to `http://localhost:3000`. You will be presented with a login screen. To log in, you will need a username and password.
+
+The backend is configured to use an in-memory user with the following credentials:
+
+- **Username:** `admin`
+- **Password:** `password`
+
+Enter these credentials into the login form and click the "Login" button.
+
+### b. Sending a Message for Conversion
+
+After logging in, you will see the main dashboard. On the left side of the dashboard, you will find the "Manual Conversion" section.
+
+1.  **Select Message Type:** Choose the type of conversion you want to perform from the dropdown menu (e.g., "REDCap to FHIR").
+2.  **Enter Message:** Paste your message (e.g., a REDCap JSON object) into the text area.
+3.  **Click Convert:** Click the "Convert" button to send the message to the backend for processing.
+
+The result of the conversion will be displayed in the "Conversion Result" box below the "Convert" button.
+
+## 4. Stopping the Application
+
+To stop the application, press `Ctrl + C` in the terminal where `docker compose up` is running. To remove the containers, you can run:
 
 ```bash
-cd src/frontEnd/fhir-gateway-ui
+docker compose down
 ```
-
-Next, install the required dependencies using npm:
-
-```bash
-npm install
-```
-
-Once the dependencies are installed, start the frontend development server:
-
-```bash
-npm start
-```
-
-Your default web browser should open to `http://localhost:3000`, displaying the application's login screen.
-
----
-
-## User Guide
-
-### Logging In
-
-To use the application, you first need to log in. The default credentials for the application are:
-
--   **Username:** `admin`
--   **Password:** `password`
-
-Enter these credentials on the login page to access the main dashboard.
-
-### Manual Message Conversion
-
-Once logged in, you can use the "Manual Conversion" tool on the dashboard to convert messages.
-
-1.  **Select Conversion Type:** Use the dropdown menu to choose the desired conversion format (e.g., "REDCap to FHIR").
-
-2.  **Enter Your Message:** Paste the message you want to convert into the text input field. For example, if you are converting from REDCap, you would paste a REDCap JSON object here.
-
-3.  **Convert:** Click the "Convert" button to process the message.
-
-The result of the conversion will appear in the "Conversion Result" box below the button. The dashboard will also display live statistics and logs for all conversion activities.
